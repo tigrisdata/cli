@@ -11,10 +11,7 @@ import credentials from './credentials.js';
 export default async function select(options: Record<string, unknown>) {
   // Check if profile flag is provided
   const profile =
-    options['profile'] ||
-    options['Profile'] ||
-    options.p ||
-    options.P;
+    options['profile'] || options['Profile'] || options.p || options.P;
 
   // Check if access key and/or secret are provided
   const accessKey =

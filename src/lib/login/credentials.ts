@@ -18,14 +18,60 @@ export default async function credentials(options: Record<string, unknown>) {
     options.Secret ||
     options.accesssecret;
 
-  // If no credentials provided via CLI, try to load from saved credentials
+  // If no credentials provided via CLI, check for saved credentials and prompt
   if (!accessKey || !accessSecret) {
     const savedCreds = getCredentials();
 
     if (savedCreds) {
-      console.log('📁 Using saved credentials...\n');
-      accessKey = savedCreds.accessKeyId;
-      accessSecret = savedCreds.secretAccessKey;
+      // Saved credentials exist - ask user if they want to use them
+      try {
+        const response = await prompt<{ useSaved: boolean }>({
+          type: 'confirm',
+          name: 'useSaved',
+          message: 'Saved credentials found. Use them?',
+          initial: true,
+        });
+
+        if (response.useSaved) {
+          console.log('📁 Using saved credentials...\n');
+          accessKey = savedCreds.accessKeyId;
+          accessSecret = savedCreds.secretAccessKey;
+        } else {
+          // User chose not to use saved credentials, prompt for new ones
+          console.log('Please provide your access credentials.\n');
+
+          const credPrompts = [];
+
+          if (!accessKey) {
+            credPrompts.push({
+              type: 'input',
+              name: 'accessKey',
+              message: 'Tigris Access Key ID:',
+              required: true,
+            });
+          }
+
+          if (!accessSecret) {
+            credPrompts.push({
+              type: 'password',
+              name: 'accessSecret',
+              message: 'Tigris Secret Access Key:',
+              required: true,
+            });
+          }
+
+          const credResponses = await prompt<{
+            accessKey?: string;
+            accessSecret?: string;
+          }>(credPrompts);
+
+          accessKey = accessKey || credResponses.accessKey;
+          accessSecret = accessSecret || credResponses.accessSecret;
+        }
+      } catch (error) {
+        console.error('\n❌ Login cancelled');
+        process.exit(1);
+      }
     } else {
       // No saved credentials, prompt for them
       console.log(
