@@ -5,8 +5,43 @@ import credentials from './credentials.js';
 
 /**
  * Main login command - presents interactive selection between user and machine login
+ * If access key and secret are provided, uses credentials flow directly
+ * If --profile flag is provided, loads from saved credentials
  */
-export default async function login(options: Record<string, unknown>) {
+export default async function select(options: Record<string, unknown>) {
+  // Check if profile flag is provided
+  const profile =
+    options['profile'] ||
+    options['Profile'] ||
+    options.p ||
+    options.P;
+
+  // Check if access key and/or secret are provided
+  const accessKey =
+    options['access-key'] ||
+    options['accessKey'] ||
+    options.key ||
+    options.Key ||
+    options.accesskey;
+  const accessSecret =
+    options['access-secret'] ||
+    options['accessSecret'] ||
+    options.secret ||
+    options.Secret ||
+    options.accesssecret;
+
+  // If profile flag is provided, use credentials flow (which loads from saved credentials)
+  if (profile) {
+    await credentials(options);
+    return;
+  }
+
+  // If either access key or secret is provided, use credentials flow directly
+  if (accessKey || accessSecret) {
+    await credentials(options);
+    return;
+  }
+
   console.log('🔐 Tigris Login\n');
 
   try {
