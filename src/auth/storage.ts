@@ -18,6 +18,7 @@ const CONFIG_DIR = join(homedir(), '.tigris');
 const TOKEN_FILE = join(CONFIG_DIR, 'tokens.json');
 const ORGS_FILE = join(CONFIG_DIR, 'organizations.json');
 const SELECTED_ORG_FILE = join(CONFIG_DIR, 'selected-org');
+const CREDENTIALS_FILE = join(CONFIG_DIR, 'credentials.json');
 
 /**
  * Ensure config directory exists with secure permissions
@@ -120,10 +121,48 @@ export function getSelectedOrganization(): string | null {
 }
 
 /**
+ * Credentials configuration interface
+ */
+export interface CredentialsConfig {
+  accessKeyId: string;
+  secretAccessKey: string;
+  endpoint: string;
+}
+
+/**
+ * Get stored credentials
+ */
+export function getCredentials(): CredentialsConfig | null {
+  if (existsSync(CREDENTIALS_FILE)) {
+    try {
+      const data = readFileSync(CREDENTIALS_FILE, 'utf8');
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Clear stored credentials
+ */
+export function clearCredentials(): void {
+  if (existsSync(CREDENTIALS_FILE)) {
+    try {
+      unlinkSync(CREDENTIALS_FILE);
+    } catch {
+      // Ignore errors
+    }
+  }
+}
+
+/**
  * Clear all stored data
  */
 export async function clearAllData(): Promise<void> {
   await clearTokens();
+  clearCredentials();
 
   const files = [ORGS_FILE, SELECTED_ORG_FILE];
   for (const file of files) {

@@ -125,21 +125,21 @@ commands:
     operations:
       # configure
       - name: configure
-        description: Configure Tigris
+        description: Configure Tigris credentials interactively
         alias: c
         arguments:
           - name: access-key
             description: Tigris Access key ID
             alias: key
-            required: true
+            required: false
           - name: access-secret
             description: Tigris Access secret
             alias: secret
-            required: true
+            required: false
           - name: endpoint
             description: Tigris Endpoint
             alias: e
-            required: true
+            required: false
       # credentials
       - name: credentials
         description: Login with credentials
