@@ -4,6 +4,7 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { chmod } from 'fs/promises';
+import { storeLoginMethod } from '../../auth/storage.js';
 
 interface CredentialsConfig {
   accessKeyId: string;
@@ -126,6 +127,9 @@ export default async function configure(options: Record<string, unknown>) {
       secretAccessKey: accessSecret as string,
       endpoint: endpoint as string,
     });
+
+    // Store login method
+    storeLoginMethod('credentials');
 
     console.log('\n✅ Credentials saved successfully!');
     console.log(`📁 Configuration stored at: ${CREDENTIALS_FILE}`);

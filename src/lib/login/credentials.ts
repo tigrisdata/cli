@@ -1,6 +1,6 @@
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { getCredentials } from '../../auth/storage.js';
+import { getCredentials, storeLoginMethod } from '../../auth/storage.js';
 
 export default async function credentials(options: Record<string, unknown>) {
   console.log('🔐 Tigris Machine Login\n');
@@ -122,6 +122,9 @@ export default async function credentials(options: Record<string, unknown>) {
   console.log('🔑 Authenticating with credentials...');
   console.log(`Access Key: ${accessKey}`);
   console.log(`Access Secret: ${'*'.repeat(String(accessSecret).length)}`);
+
+  // Store login method
+  storeLoginMethod('credentials');
 
   // TODO: Implement actual authentication logic
   console.log('✅ Successfully authenticated with credentials');

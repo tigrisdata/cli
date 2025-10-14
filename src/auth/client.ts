@@ -19,6 +19,7 @@ import {
   clearTokens,
   storeOrganizations,
   getOrganizations,
+  storeLoginMethod,
 } from './storage.js';
 
 interface DeviceCodeResponse {
@@ -94,6 +95,9 @@ export class TigrisAuthClient {
 
       // Store tokens securely
       await storeTokens(tokens);
+
+      // Store login method
+      storeLoginMethod('oauth');
 
       // Extract and store organizations
       await this.extractAndStoreOrganizations(tokens.idToken);

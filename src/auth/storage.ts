@@ -19,6 +19,7 @@ const TOKEN_FILE = join(CONFIG_DIR, 'tokens.json');
 const ORGS_FILE = join(CONFIG_DIR, 'organizations.json');
 const SELECTED_ORG_FILE = join(CONFIG_DIR, 'selected-org');
 const CREDENTIALS_FILE = join(CONFIG_DIR, 'credentials.json');
+const LOGIN_METHOD_FILE = join(CONFIG_DIR, 'login-method');
 
 /**
  * Ensure config directory exists with secure permissions
@@ -158,13 +159,38 @@ export function clearCredentials(): void {
 }
 
 /**
+ * Store the login method used by the user
+ */
+export function storeLoginMethod(method: 'oauth' | 'credentials'): void {
+  ensureConfigDir();
+  writeFileSync(LOGIN_METHOD_FILE, method, { mode: 0o600 });
+}
+
+/**
+ * Get the stored login method
+ */
+export function getLoginMethod(): 'oauth' | 'credentials' | null {
+  if (existsSync(LOGIN_METHOD_FILE)) {
+    try {
+      const method = readFileSync(LOGIN_METHOD_FILE, 'utf8').trim();
+      if (method === 'oauth' || method === 'credentials') {
+        return method;
+      }
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
  * Clear all stored data
  */
 export async function clearAllData(): Promise<void> {
   await clearTokens();
   clearCredentials();
 
-  const files = [ORGS_FILE, SELECTED_ORG_FILE];
+  const files = [ORGS_FILE, SELECTED_ORG_FILE, LOGIN_METHOD_FILE];
   for (const file of files) {
     if (existsSync(file)) {
       try {
