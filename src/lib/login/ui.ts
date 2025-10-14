@@ -1,7 +1,7 @@
 import { getAuthClient } from '../../auth/client.js';
 
 export async function ui(): Promise<void> {
-  console.log('🔐 Tigris Login');
+  console.log('🔐 Tigris User Login');
   try {
     const authClient = getAuthClient();
 
@@ -22,3 +22,5 @@ export async function ui(): Promise<void> {
     process.exit(1);
   }
 }
+
+export default ui;
