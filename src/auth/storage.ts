@@ -4,12 +4,7 @@
 
 import { homedir } from 'os';
 import { join } from 'path';
-import {
-  readFileSync,
-  writeFileSync,
-  existsSync,
-  mkdirSync,
-} from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { chmod } from 'fs/promises';
 import type { TokenSet, OrganizationInfo } from './types.js';
 

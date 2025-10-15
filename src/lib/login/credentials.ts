@@ -51,33 +51,33 @@ export default async function credentials(options: Record<string, unknown>) {
             accessKey = savedCreds.accessKeyId;
             accessSecret = savedCreds.secretAccessKey;
           } else {
-          // User chose not to use saved credentials, prompt for new ones
-          console.log('Please provide your access credentials.\n');
+            // User chose not to use saved credentials, prompt for new ones
+            console.log('Please provide your access credentials.\n');
 
-          const credPrompts = [];
+            const credPrompts = [];
 
-          if (!accessKey) {
-            credPrompts.push({
-              type: 'input',
-              name: 'accessKey',
-              message: 'Tigris Access Key ID:',
-              required: true,
-            });
-          }
+            if (!accessKey) {
+              credPrompts.push({
+                type: 'input',
+                name: 'accessKey',
+                message: 'Tigris Access Key ID:',
+                required: true,
+              });
+            }
 
-          if (!accessSecret) {
-            credPrompts.push({
-              type: 'password',
-              name: 'accessSecret',
-              message: 'Tigris Secret Access Key:',
-              required: true,
-            });
-          }
+            if (!accessSecret) {
+              credPrompts.push({
+                type: 'password',
+                name: 'accessSecret',
+                message: 'Tigris Secret Access Key:',
+                required: true,
+              });
+            }
 
-          const credResponses = await prompt<{
-            accessKey?: string;
-            accessSecret?: string;
-          }>(credPrompts);
+            const credResponses = await prompt<{
+              accessKey?: string;
+              accessSecret?: string;
+            }>(credPrompts);
 
             accessKey = accessKey || credResponses.accessKey;
             accessSecret = accessSecret || credResponses.accessSecret;
