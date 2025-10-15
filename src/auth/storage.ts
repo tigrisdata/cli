@@ -1,5 +1,5 @@
 /**
- * Secure token storage using file-based storage
+ * Secure storage using a single config file
  */
 
 import { homedir } from 'os';
@@ -9,116 +9,23 @@ import {
   writeFileSync,
   existsSync,
   mkdirSync,
-  unlinkSync,
 } from 'fs';
 import { chmod } from 'fs/promises';
 import type { TokenSet, OrganizationInfo } from './types.js';
 
 const CONFIG_DIR = join(homedir(), '.tigris');
-const TOKEN_FILE = join(CONFIG_DIR, 'tokens.json');
-const ORGS_FILE = join(CONFIG_DIR, 'organizations.json');
-const SELECTED_ORG_FILE = join(CONFIG_DIR, 'selected-org');
-const CREDENTIALS_FILE = join(CONFIG_DIR, 'credentials.json');
-const LOGIN_METHOD_FILE = join(CONFIG_DIR, 'login-method');
+const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
 
 /**
- * Ensure config directory exists with secure permissions
+ * Configuration structure
  */
-function ensureConfigDir(): void {
-  if (!existsSync(CONFIG_DIR)) {
-    mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
-  }
-}
-
-/**
- * Store tokens securely
- */
-export async function storeTokens(tokens: TokenSet): Promise<void> {
-  ensureConfigDir();
-  writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2), { mode: 0o600 });
-
-  // Ensure file has restrictive permissions
-  try {
-    await chmod(TOKEN_FILE, 0o600);
-  } catch {
-    // Ignore chmod errors on Windows
-  }
-}
-
-/**
- * Retrieve stored tokens
- */
-export async function getTokens(): Promise<TokenSet | null> {
-  if (existsSync(TOKEN_FILE)) {
-    try {
-      const data = readFileSync(TOKEN_FILE, 'utf8');
-      return JSON.parse(data);
-    } catch {
-      return null;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Clear stored tokens
- */
-export async function clearTokens(): Promise<void> {
-  if (existsSync(TOKEN_FILE)) {
-    try {
-      unlinkSync(TOKEN_FILE);
-    } catch {
-      // Ignore errors
-    }
-  }
-}
-
-/**
- * Store organizations list
- */
-export function storeOrganizations(organizations: OrganizationInfo[]): void {
-  ensureConfigDir();
-  writeFileSync(ORGS_FILE, JSON.stringify(organizations, null, 2), {
-    mode: 0o600,
-  });
-}
-
-/**
- * Get stored organizations
- */
-export function getOrganizations(): OrganizationInfo[] {
-  if (existsSync(ORGS_FILE)) {
-    try {
-      const data = readFileSync(ORGS_FILE, 'utf8');
-      return JSON.parse(data);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-/**
- * Store selected organization
- */
-export function storeSelectedOrganization(orgId: string): void {
-  ensureConfigDir();
-  writeFileSync(SELECTED_ORG_FILE, orgId, { mode: 0o600 });
-}
-
-/**
- * Get selected organization
- */
-export function getSelectedOrganization(): string | null {
-  if (existsSync(SELECTED_ORG_FILE)) {
-    try {
-      return readFileSync(SELECTED_ORG_FILE, 'utf8').trim();
-    } catch {
-      return null;
-    }
-  }
-  return null;
+interface TigrisConfig {
+  tokens?: TokenSet;
+  organizations?: OrganizationInfo[];
+  selectedOrganization?: string;
+  credentials?: CredentialsConfig;
+  temporaryCredentials?: CredentialsConfig;
+  loginMethod?: 'oauth' | 'credentials';
 }
 
 /**
@@ -131,73 +38,183 @@ export interface CredentialsConfig {
 }
 
 /**
- * Get stored credentials
+ * Ensure config directory exists with secure permissions
  */
-export function getCredentials(): CredentialsConfig | null {
-  if (existsSync(CREDENTIALS_FILE)) {
-    try {
-      const data = readFileSync(CREDENTIALS_FILE, 'utf8');
-      return JSON.parse(data);
-    } catch {
-      return null;
-    }
+function ensureConfigDir(): void {
+  if (!existsSync(CONFIG_DIR)) {
+    mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
   }
-  return null;
 }
 
 /**
- * Clear stored credentials
+ * Read config from file
  */
-export function clearCredentials(): void {
-  if (existsSync(CREDENTIALS_FILE)) {
+function readConfig(): TigrisConfig {
+  if (existsSync(CONFIG_FILE)) {
     try {
-      unlinkSync(CREDENTIALS_FILE);
+      const data = readFileSync(CONFIG_FILE, 'utf8');
+      return JSON.parse(data);
     } catch {
-      // Ignore errors
+      return {};
     }
   }
+  return {};
+}
+
+/**
+ * Write config to file
+ */
+async function writeConfig(config: TigrisConfig): Promise<void> {
+  ensureConfigDir();
+  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), { mode: 0o600 });
+
+  // Ensure file has restrictive permissions
+  try {
+    await chmod(CONFIG_FILE, 0o600);
+  } catch {
+    // Ignore chmod errors on Windows
+  }
+}
+
+/**
+ * Store tokens securely
+ */
+export async function storeTokens(tokens: TokenSet): Promise<void> {
+  const config = readConfig();
+  config.tokens = tokens;
+  await writeConfig(config);
+}
+
+/**
+ * Retrieve stored tokens
+ */
+export async function getTokens(): Promise<TokenSet | null> {
+  const config = readConfig();
+  return config.tokens || null;
+}
+
+/**
+ * Clear stored tokens
+ */
+export async function clearTokens(): Promise<void> {
+  const config = readConfig();
+  delete config.tokens;
+  await writeConfig(config);
+}
+
+/**
+ * Store organizations list
+ */
+export async function storeOrganizations(
+  organizations: OrganizationInfo[]
+): Promise<void> {
+  const config = readConfig();
+  config.organizations = organizations;
+  await writeConfig(config);
+}
+
+/**
+ * Get stored organizations
+ */
+export function getOrganizations(): OrganizationInfo[] {
+  const config = readConfig();
+  return config.organizations || [];
+}
+
+/**
+ * Store selected organization
+ */
+export async function storeSelectedOrganization(orgId: string): Promise<void> {
+  const config = readConfig();
+  config.selectedOrganization = orgId;
+  await writeConfig(config);
+}
+
+/**
+ * Get selected organization
+ */
+export function getSelectedOrganization(): string | null {
+  const config = readConfig();
+  return config.selectedOrganization || null;
+}
+
+/**
+ * Get stored credentials (checks temporary first, then saved)
+ */
+export function getCredentials(): CredentialsConfig | null {
+  const config = readConfig();
+  return config.temporaryCredentials || config.credentials || null;
+}
+
+/**
+ * Store permanent credentials (from configure command)
+ */
+export async function storeCredentials(
+  credentials: CredentialsConfig
+): Promise<void> {
+  const config = readConfig();
+  config.credentials = credentials;
+  await writeConfig(config);
+}
+
+/**
+ * Store temporary credentials (from login command)
+ */
+export async function storeTemporaryCredentials(
+  credentials: CredentialsConfig
+): Promise<void> {
+  const config = readConfig();
+  config.temporaryCredentials = credentials;
+  await writeConfig(config);
+}
+
+/**
+ * Clear temporary credentials
+ */
+export async function clearTemporaryCredentials(): Promise<void> {
+  const config = readConfig();
+  delete config.temporaryCredentials;
+  await writeConfig(config);
+}
+
+/**
+ * Clear saved credentials (from configure)
+ */
+export async function clearCredentials(): Promise<void> {
+  const config = readConfig();
+  delete config.credentials;
+  await writeConfig(config);
 }
 
 /**
  * Store the login method used by the user
  */
-export function storeLoginMethod(method: 'oauth' | 'credentials'): void {
-  ensureConfigDir();
-  writeFileSync(LOGIN_METHOD_FILE, method, { mode: 0o600 });
+export async function storeLoginMethod(
+  method: 'oauth' | 'credentials'
+): Promise<void> {
+  const config = readConfig();
+  config.loginMethod = method;
+  await writeConfig(config);
 }
 
 /**
  * Get the stored login method
  */
 export function getLoginMethod(): 'oauth' | 'credentials' | null {
-  if (existsSync(LOGIN_METHOD_FILE)) {
-    try {
-      const method = readFileSync(LOGIN_METHOD_FILE, 'utf8').trim();
-      if (method === 'oauth' || method === 'credentials') {
-        return method;
-      }
-    } catch {
-      return null;
-    }
-  }
-  return null;
+  const config = readConfig();
+  return config.loginMethod || null;
 }
 
 /**
- * Clear all stored data
+ * Clear all stored data (except saved credentials from configure)
  */
 export async function clearAllData(): Promise<void> {
-  await clearTokens();
-  clearCredentials();
+  const config = readConfig();
+  const savedCredentials = config.credentials;
 
-  const files = [ORGS_FILE, SELECTED_ORG_FILE, LOGIN_METHOD_FILE];
-  for (const file of files) {
-    if (existsSync(file)) {
-      try {
-        unlinkSync(file);
-      } catch {
-        // Ignore errors
-      }
-    }
-  }
+  // Clear everything except saved credentials
+  // This includes: tokens, organizations, selectedOrganization, temporaryCredentials, loginMethod
+  await writeConfig({
+    credentials: savedCredentials,
+  });
 }

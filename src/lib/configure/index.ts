@@ -1,45 +1,6 @@
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { homedir } from 'os';
-import { join } from 'path';
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import { chmod } from 'fs/promises';
-import { storeLoginMethod } from '../../auth/storage.js';
-
-interface CredentialsConfig {
-  accessKeyId: string;
-  secretAccessKey: string;
-  endpoint: string;
-}
-
-const CONFIG_DIR = join(homedir(), '.tigris');
-const CREDENTIALS_FILE = join(CONFIG_DIR, 'credentials.json');
-
-/**
- * Ensure config directory exists with secure permissions
- */
-function ensureConfigDir(): void {
-  if (!existsSync(CONFIG_DIR)) {
-    mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
-  }
-}
-
-/**
- * Store credentials securely
- */
-async function storeCredentials(credentials: CredentialsConfig): Promise<void> {
-  ensureConfigDir();
-  writeFileSync(CREDENTIALS_FILE, JSON.stringify(credentials, null, 2), {
-    mode: 0o600,
-  });
-
-  // Ensure file has restrictive permissions
-  try {
-    await chmod(CREDENTIALS_FILE, 0o600);
-  } catch {
-    // Ignore chmod errors on Windows
-  }
-}
+import { storeCredentials, storeLoginMethod } from '../../auth/storage.js';
 
 export default async function configure(options: Record<string, unknown>) {
   console.log('🔐 Tigris Configuration\n');
@@ -129,10 +90,9 @@ export default async function configure(options: Record<string, unknown>) {
     });
 
     // Store login method
-    storeLoginMethod('credentials');
+    await storeLoginMethod('credentials');
 
     console.log('\n✅ Credentials saved successfully!');
-    console.log(`📁 Configuration stored at: ${CREDENTIALS_FILE}`);
     console.log(
       '\n💡 You can now use Tigris CLI commands with these credentials.'
     );

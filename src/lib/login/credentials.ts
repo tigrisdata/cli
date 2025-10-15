@@ -1,6 +1,10 @@
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { getCredentials, storeLoginMethod } from '../../auth/storage.js';
+import {
+  getCredentials,
+  storeLoginMethod,
+  storeTemporaryCredentials,
+} from '../../auth/storage.js';
 
 export default async function credentials(options: Record<string, unknown>) {
   console.log('🔐 Tigris Machine Login\n');
@@ -18,25 +22,35 @@ export default async function credentials(options: Record<string, unknown>) {
     options.Secret ||
     options.accesssecret;
 
+  // Check if --profile flag is provided
+  const useProfile =
+    options['profile'] || options['Profile'] || options.p || options.P;
+
   // If no credentials provided via CLI, check for saved credentials and prompt
   if (!accessKey || !accessSecret) {
     const savedCreds = getCredentials();
 
     if (savedCreds) {
-      // Saved credentials exist - ask user if they want to use them
-      try {
-        const response = await prompt<{ useSaved: boolean }>({
-          type: 'confirm',
-          name: 'useSaved',
-          message: 'Saved credentials found. Use them?',
-          initial: true,
-        });
+      // If --profile flag is used, automatically use saved credentials
+      if (useProfile) {
+        console.log('📁 Using saved credentials from profile...\n');
+        accessKey = savedCreds.accessKeyId;
+        accessSecret = savedCreds.secretAccessKey;
+      } else {
+        // Saved credentials exist - ask user if they want to use them
+        try {
+          const response = await prompt<{ useSaved: boolean }>({
+            type: 'confirm',
+            name: 'useSaved',
+            message: 'Saved credentials found. Use them?',
+            initial: true,
+          });
 
-        if (response.useSaved) {
-          console.log('📁 Using saved credentials...\n');
-          accessKey = savedCreds.accessKeyId;
-          accessSecret = savedCreds.secretAccessKey;
-        } else {
+          if (response.useSaved) {
+            console.log('📁 Using saved credentials...\n');
+            accessKey = savedCreds.accessKeyId;
+            accessSecret = savedCreds.secretAccessKey;
+          } else {
           // User chose not to use saved credentials, prompt for new ones
           console.log('Please provide your access credentials.\n');
 
@@ -65,15 +79,24 @@ export default async function credentials(options: Record<string, unknown>) {
             accessSecret?: string;
           }>(credPrompts);
 
-          accessKey = accessKey || credResponses.accessKey;
-          accessSecret = accessSecret || credResponses.accessSecret;
+            accessKey = accessKey || credResponses.accessKey;
+            accessSecret = accessSecret || credResponses.accessSecret;
+          }
+        } catch (error) {
+          console.error('\n❌ Login cancelled');
+          process.exit(1);
         }
-      } catch (error) {
-        console.error('\n❌ Login cancelled');
-        process.exit(1);
       }
     } else {
-      // No saved credentials, prompt for them
+      // No saved credentials
+      if (useProfile) {
+        console.error(
+          '❌ No saved credentials found. Please run "tigris configure" first.\n'
+        );
+        process.exit(1);
+      }
+
+      // Prompt for them
       console.log(
         'No saved credentials found. Please provide your access credentials.\n'
       );
@@ -123,9 +146,19 @@ export default async function credentials(options: Record<string, unknown>) {
   console.log(`Access Key: ${accessKey}`);
   console.log(`Access Secret: ${'*'.repeat(String(accessSecret).length)}`);
 
-  // Store login method
-  storeLoginMethod('credentials');
+  // Get endpoint from saved credentials or use default
+  const savedCreds = getCredentials();
+  const endpoint = savedCreds?.endpoint || 'https://t3.storage.dev';
 
-  // TODO: Implement actual authentication logic
+  // Store temporary credentials (will be cleared on logout)
+  await storeTemporaryCredentials({
+    accessKeyId: accessKey as string,
+    secretAccessKey: accessSecret as string,
+    endpoint,
+  });
+
+  // Store login method
+  await storeLoginMethod('credentials');
+
   console.log('✅ Successfully authenticated with credentials');
 }
