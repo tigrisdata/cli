@@ -27,6 +27,9 @@ export default async function select(options: Record<string, unknown>) {
     options.Secret ||
     options.accesssecret;
 
+  // Check if user flag is provided
+  const oauth = options['oauth'] || options['OAuth'] || options.o || options.O;
+
   // If profile flag is provided, use credentials flow (which loads from saved credentials)
   if (profile) {
     await credentials(options);
@@ -36,6 +39,11 @@ export default async function select(options: Record<string, unknown>) {
   // If either access key or secret is provided, use credentials flow directly
   if (accessKey || accessSecret) {
     await credentials(options);
+    return;
+  }
+
+  if (oauth) {
+    await ui();
     return;
   }
 

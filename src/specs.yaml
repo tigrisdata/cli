@@ -154,6 +154,11 @@ commands:
         alias: p
         required: false
         type: flag
+      - name: oauth
+        description: Login as a user (OAuth2 flow)
+        alias: o
+        required: false
+        type: flag
     operations:
       # login (main interactive operation)
       - name: select
@@ -170,6 +175,11 @@ commands:
           - name: profile
             description: Use saved credentials profile (loads from ~/.tigris/credentials.json)
             alias: p
+            required: false
+            type: flag
+          - name: oauth
+            description: Login as a user (OAuth2 flow)
+            alias: o
             required: false
             type: flag
       # ui
