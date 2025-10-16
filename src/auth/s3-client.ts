@@ -9,8 +9,8 @@ import {
   getLoginMethod as getStoredLoginMethod,
   getCredentials,
   getSelectedOrganization,
-} from '../auth/storage.js';
-import { getAuthClient } from '../auth/client.js';
+} from './storage.js';
+import { getAuthClient } from './client.js';
 
 export type LoginMethod = 'oauth' | 'credentials';
 

@@ -1,6 +1,6 @@
 import { getOption } from '../../utils/options.js';
 import { formatOutput } from '../../utils/format.js';
-import { getS3Client } from '../s3-client.js';
+import { getS3Client } from '../../auth/s3-client.js';
 import { ListBucketsCommand } from '@aws-sdk/client-s3';
 
 export default async function list(options: Record<string, unknown>) {
