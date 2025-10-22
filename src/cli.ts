@@ -6,6 +6,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as YAML from 'yaml';
 import type { Argument, OperationSpec, CommandSpec } from './types.js';
+import { version } from '../package.json';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -114,7 +115,7 @@ function showOperationHelp(command: CommandSpec, operation: OperationSpec) {
 }
 
 function showMainHelp() {
-  console.log(`\n${specs.name} - ${specs.description}\n`);
+  console.log(`Tigris CLI Version: ${version}\n`);
   console.log('Usage: tigris [command] [options]\n');
   console.log('Commands:');
 
@@ -126,8 +127,6 @@ function showMainHelp() {
     const paddedCommandPart = commandPart.padEnd(24);
     console.log(`${paddedCommandPart}${command.description}`);
   });
-
-  console.log(`\nVersion: ${specs.version}`);
   console.log(
     `\nUse "${specs.name} <command> help" for more information about a command.`
   );
@@ -225,9 +224,17 @@ async function loadAndExecuteCommand(
   commandName: string,
   operationName?: string,
   positionalArgs: string[] = [],
-  options: Record<string, unknown> = {}
+  options: Record<string, unknown> = {},
+  message?: string
 ) {
   try {
+    // Display message if available
+    if (message) {
+      // Replace literal \n with actual newlines
+      const formattedMessage = message.replace(/\\n/g, '\n');
+      console.log(formattedMessage);
+    }
+
     let modulePath: string;
     let functionName: string;
 
@@ -386,7 +393,8 @@ specs.commands.forEach((command: CommandSpec) => {
             operationSpec.arguments || [],
             positionalArgs,
             options
-          )
+          ),
+          operationSpec.message
         );
       });
 
@@ -432,7 +440,8 @@ specs.commands.forEach((command: CommandSpec) => {
               defaultOperation.arguments || [],
               positionalArgs,
               options
-            )
+            ),
+            command.message || defaultOperation.message
           );
         });
       }
@@ -462,7 +471,8 @@ specs.commands.forEach((command: CommandSpec) => {
         command.name,
         undefined,
         positionalArgs,
-        extractArgumentValues(command.arguments || [], positionalArgs, options)
+        extractArgumentValues(command.arguments || [], positionalArgs, options),
+        command.message
       );
     });
   }

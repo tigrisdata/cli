@@ -18,6 +18,7 @@ export interface OperationSpec {
   description: string;
   alias?: string | string[];
   arguments?: Argument[];
+  message?: string;
 }
 
 export interface CommandSpec {
@@ -27,6 +28,7 @@ export interface CommandSpec {
   arguments?: Argument[];
   operations?: OperationSpec[];
   default?: string;
+  message?: string;
 }
 
 export interface ParsedPath {

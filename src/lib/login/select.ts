@@ -47,8 +47,6 @@ export default async function select(options: Record<string, unknown>) {
     return;
   }
 
-  console.log('🔐 Tigris Login\n');
-
   try {
     const response = await prompt<{ loginType: string }>({
       type: 'select',

@@ -139,6 +139,14 @@ commands:
   # login
   - name: login
     description: Login to Tigris (interactive selection between user and machine)
+    message: >
+      🔐 Welcome to the Tigris CLI!\n\n
+
+      A Tigris account is required to use this CLI.
+      \nTo create one, visit http://console.tigris.dev/signup.\n\n
+
+      You may authenticate to your account either as a user with personal
+      \ncredentials or as a machine by using your access key and secret.
     alias: l
     arguments:
       - name: access-key
