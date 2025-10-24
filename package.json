@@ -73,7 +73,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.908.0",
-    "@tigrisdata/storage": "*",
+    "@tigrisdata/storage": "^2.4.0",
     "axios": "^1.12.2",
     "commander": "^11.0.0",
     "enquirer": "^2.4.1",
