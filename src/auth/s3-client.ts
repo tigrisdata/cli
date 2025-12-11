@@ -28,6 +28,8 @@ export type TigrisStorageConfig = {
   endpoint?: string;
   sessionToken?: string;
   organizationId?: string;
+  iamEndpoint?: string;
+  authDomain?: string;
 };
 
 export async function getStorageConfig(): Promise<TigrisStorageConfig> {
@@ -52,12 +54,18 @@ export async function getStorageConfig(): Promise<TigrisStorageConfig> {
     }
 
     const endpoint = process.env.TIGRIS_ENDPOINT ?? 'https://t3.storage.dev';
+    const iamEndpoint =
+      process.env.TIGRIS_STORAGE_IAM_ENDPOINT ?? 'https://iam.storageapi.dev';
+    const authDomain = process.env.AUTH0_DOMAIN ?? 'https://auth.tigris.dev';
+
     return {
       sessionToken: accessToken,
       accessKeyId: '',
       secretAccessKey: '',
       endpoint,
       organizationId: getSelectedOrganization() ?? undefined,
+      iamEndpoint,
+      authDomain,
     };
   }
 

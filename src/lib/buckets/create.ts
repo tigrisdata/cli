@@ -3,11 +3,19 @@ import enquirer from 'enquirer';
 import { getArgumentSpec, buildPromptChoices } from '../../utils/specs.js';
 import { StorageClass, createBucket } from '@tigrisdata/storage';
 import { getStorageConfig } from '../../auth/s3-client';
+import {
+  printStart,
+  printSuccess,
+  printFailure,
+  msg,
+} from '../../utils/messages.js';
 
 const { prompt } = enquirer;
 
+const context = msg('buckets', 'create');
+
 export default async function create(options: Record<string, unknown>) {
-  console.log('🪣 Creating Bucket\n');
+  printStart(context);
 
   // Check if user provided any actual arguments
   // Commander auto-fills defaults, so we need to check if user explicitly provided values
@@ -146,25 +154,16 @@ export default async function create(options: Record<string, unknown>) {
       consistency = consistency || responses.consistency;
       region = region !== undefined ? region : responses.region;
     } catch (error) {
-      console.error('\n❌ Operation cancelled');
+      printFailure(context, 'Operation cancelled');
       process.exit(1);
     }
   }
 
   // Validate required fields
   if (!name) {
-    console.error('❌ Bucket name is required');
+    printFailure(context, 'Bucket name is required');
     process.exit(1);
   }
-
-  console.log('\n📋 Creating bucket with the following configuration:');
-  console.log(`   Name: ${name}`);
-  console.log(`   Access: ${access || 'private'}`);
-  console.log(`   Default Tier: ${defaultTier || 'STANDARD'}`);
-  console.log(`   Consistency: ${consistency || 'default'}`);
-  console.log(`   Region: ${region || 'Global'}`);
-  console.log(`   Enable Snapshots: ${enableSnapshots || 'false'}`);
-  console.log('');
 
   const { error } = await createBucket(name, {
     defaultTier: (defaultTier ?? 'STANDARD') as StorageClass,
@@ -178,9 +177,9 @@ export default async function create(options: Record<string, unknown>) {
   });
 
   if (error) {
-    console.error('❌ Failed to create bucket:', error.message);
+    printFailure(context, error.message);
     process.exit(1);
   }
 
-  console.log('✅ Bucket created successfully!');
+  printSuccess(context, { name });
 }
