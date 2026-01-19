@@ -15,18 +15,18 @@ export default async function whoami(): Promise<void> {
     const loginMethod = getLoginMethod();
     const credentials = getCredentials();
 
-    // Check if authenticated (either OAuth or credentials)
-    if (loginMethod !== 'oauth' && !credentials) {
-      printAlreadyDone(context);
-      return;
-    }
-
     // Get user info based on login method
     let email: string | undefined;
     let userId: string | undefined;
 
     if (loginMethod === 'oauth') {
       const authClient = getAuthClient();
+      // Verify OAuth tokens actually exist (handles case where tokens were cleared but loginMethod wasn't)
+      const isAuthenticated = await authClient.isAuthenticated();
+      if (!isAuthenticated) {
+        printAlreadyDone(context);
+        return;
+      }
       const claims = await authClient.getIdTokenClaims();
       email = claims.email;
       userId = claims.sub;
@@ -34,6 +34,10 @@ export default async function whoami(): Promise<void> {
       // Using access key credentials
       email = undefined;
       userId = credentials.accessKeyId;
+    } else {
+      // Not authenticated
+      printAlreadyDone(context);
+      return;
     }
 
     const lines: string[] = [];
