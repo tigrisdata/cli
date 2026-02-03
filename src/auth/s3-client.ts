@@ -49,8 +49,11 @@ export async function getStorageConfig(): Promise<TigrisStorageConfig> {
     return {
       accessKeyId: resolved.accessKeyId,
       secretAccessKey: resolved.secretAccessKey,
-      endpoint: profileConfig.endpoint || 'https://t3.storage.dev',
-      iamEndpoint: profileConfig.iamEndpoint,
+      endpoint:
+        profileConfig.endpoint ||
+        tigrisConfig.endpoint ||
+        'https://t3.storage.dev',
+      iamEndpoint: profileConfig.iamEndpoint || tigrisConfig.iamEndpoint,
     };
   }
 
@@ -127,7 +130,10 @@ export async function getS3Client(): Promise<S3Client> {
     const profileConfig = await getAwsProfileConfig(profile);
     const client = new S3Client({
       region: 'auto',
-      endpoint: profileConfig.endpoint || 'https://t3.storage.dev',
+      endpoint:
+        profileConfig.endpoint ||
+        tigrisConfig.endpoint ||
+        'https://t3.storage.dev',
       credentials: fromIni({ profile }),
     });
 
