@@ -197,11 +197,13 @@ export async function getAwsProfileConfig(
 }
 
 /**
- * Get credentials in priority order:
+ * Get non-login credentials in priority order:
  * 1. Environment variables (TIGRIS_ACCESS_KEY / AWS_ACCESS_KEY_ID)
- * 2. AWS profile (~/.aws/credentials) - only if AWS_PROFILE is set, handled via fromIni in s3-client
- * 3. Temporary credentials (from 'tigris login')
- * 4. Saved credentials (from 'tigris configure')
+ * 2. Temporary credentials (from 'tigris login')
+ * 3. Saved credentials (from 'tigris configure')
+ *
+ * Note: AWS profile and login method checks are handled in s3-client.ts
+ * Full resolution order (in s3-client): AWS_PROFILE → login → env vars → configured
  */
 export function getCredentials(): CredentialsConfig | null {
   const config = readConfig();
