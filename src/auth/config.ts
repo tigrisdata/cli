@@ -32,8 +32,13 @@ export const TIGRIS_CLAIMS_NAMESPACE =
 
 export function getTigrisConfig(): TigrisConfig {
   return {
-    endpoint: process.env.TIGRIS_STORAGE_ENDPOINT || 'https://t3.storage.dev',
+    endpoint:
+      process.env.TIGRIS_STORAGE_ENDPOINT ||
+      process.env.AWS_ENDPOINT_URL_S3 ||
+      'https://t3.storage.dev',
     iamEndpoint:
-      process.env.TIGRIS_IAM_ENDPOINT || 'https://iam.storageapi.dev',
+      process.env.TIGRIS_IAM_ENDPOINT ||
+      process.env.AWS_ENDPOINT_URL_IAM ||
+      'https://iam.storageapi.dev',
   };
 }

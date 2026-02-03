@@ -57,7 +57,9 @@ export default async function configure(options: Record<string, unknown>) {
         message: 'Tigris Endpoint:',
         required: true,
         initial:
-          process.env.TIGRIS_STORAGE_ENDPOINT ?? 'https://t3.storage.dev',
+          process.env.TIGRIS_STORAGE_ENDPOINT ??
+          process.env.AWS_ENDPOINT_URL_S3 ??
+          'https://t3.storage.dev',
       });
     }
 

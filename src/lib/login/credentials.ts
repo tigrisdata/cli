@@ -76,6 +76,7 @@ export default async function credentials(options: Record<string, unknown>) {
   const configuredCreds = getSavedCredentials();
   const endpoint =
     process.env.TIGRIS_STORAGE_ENDPOINT ||
+    process.env.AWS_ENDPOINT_URL_S3 ||
     configuredCreds?.endpoint ||
     'https://t3.storage.dev';
 
