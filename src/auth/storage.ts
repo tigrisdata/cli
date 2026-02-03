@@ -187,7 +187,8 @@ export async function getAwsProfileConfig(
     }
 
     return {
-      endpoint: profileConfig['endpoint_url_s3'],
+      endpoint:
+        profileConfig['endpoint_url_s3'] || profileConfig['endpoint_url'],
       iamEndpoint: profileConfig['endpoint_url_iam'],
       region: profileConfig['region'],
     };
