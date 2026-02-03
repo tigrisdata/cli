@@ -8,7 +8,7 @@ import type { HttpRequest } from '@aws-sdk/types';
 import { fromIni } from '@aws-sdk/credential-providers';
 import {
   getLoginMethod as getStoredLoginMethod,
-  getCredentials,
+  getStoredCredentials,
   getEnvCredentials,
   hasAwsProfile,
   getAwsProfileConfig,
@@ -68,23 +68,19 @@ export async function getStorageConfig(): Promise<TigrisStorageConfig> {
       );
     }
 
-    const endpoint = tigrisConfig.endpoint;
-    const iamEndpoint = tigrisConfig.iamEndpoint;
-    const authDomain = auth0Config.domain;
-
     return {
       sessionToken: accessToken,
       accessKeyId: '',
       secretAccessKey: '',
-      endpoint,
+      endpoint: tigrisConfig.endpoint,
       organizationId: getSelectedOrganization() ?? undefined,
-      iamEndpoint,
-      authDomain,
+      iamEndpoint: tigrisConfig.iamEndpoint,
+      authDomain: auth0Config.domain,
     };
   }
 
   if (loginMethod === 'credentials') {
-    const loginCredentials = getCredentials();
+    const loginCredentials = getStoredCredentials();
     if (loginCredentials) {
       return {
         accessKeyId: loginCredentials.accessKeyId,
@@ -105,7 +101,7 @@ export async function getStorageConfig(): Promise<TigrisStorageConfig> {
   }
 
   // 4. Configured credentials
-  const credentials = getCredentials();
+  const credentials = getStoredCredentials();
 
   if (credentials) {
     return {
@@ -152,11 +148,9 @@ export async function getS3Client(): Promise<S3Client> {
       );
     }
 
-    const endpoint = tigrisConfig.endpoint;
-
     const client = new S3Client({
       region: 'auto',
-      endpoint,
+      endpoint: tigrisConfig.endpoint,
       credentials: {
         sessionToken: accessToken,
         accessKeyId: '', // Required by SDK but not used with token auth
@@ -183,7 +177,7 @@ export async function getS3Client(): Promise<S3Client> {
   }
 
   if (loginMethod === 'credentials') {
-    const loginCredentials = getCredentials();
+    const loginCredentials = getStoredCredentials();
     if (loginCredentials) {
       const client = new S3Client({
         region: 'auto',
@@ -214,7 +208,7 @@ export async function getS3Client(): Promise<S3Client> {
   }
 
   // 4. Configured credentials
-  const credentials = getCredentials();
+  const credentials = getStoredCredentials();
 
   if (credentials) {
     const client = new S3Client({
@@ -243,6 +237,6 @@ export async function isAuthenticated(): Promise<boolean> {
     hasAwsProfile() ||
     (await getLoginMethod()) !== null ||
     getEnvCredentials() !== null ||
-    getCredentials() !== null
+    getStoredCredentials() !== null
   );
 }

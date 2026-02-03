@@ -216,6 +216,16 @@ export function getCredentials(): CredentialsConfig | null {
 }
 
 /**
+ * Get stored credentials only (no env vars):
+ * 1. Temporary credentials (from 'tigris login')
+ * 2. Saved credentials (from 'tigris configure')
+ */
+export function getStoredCredentials(): CredentialsConfig | null {
+  const config = readConfig();
+  return config.temporaryCredentials || config.credentials || null;
+}
+
+/**
  * Get only permanent/saved credentials (from configure command)
  */
 export function getSavedCredentials(): CredentialsConfig | null {
