@@ -1,6 +1,7 @@
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
 import { storeCredentials, storeLoginMethod } from '../../auth/storage.js';
+import { DEFAULT_STORAGE_ENDPOINT } from '../../constants.js';
 import {
   printStart,
   printSuccess,
@@ -56,10 +57,7 @@ export default async function configure(options: Record<string, unknown>) {
         name: 'endpoint',
         message: 'Tigris Endpoint:',
         required: true,
-        initial:
-          process.env.TIGRIS_STORAGE_ENDPOINT ??
-          process.env.AWS_ENDPOINT_URL_S3 ??
-          'https://t3.storage.dev',
+        initial: DEFAULT_STORAGE_ENDPOINT,
       });
     }
 

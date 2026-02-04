@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { loadSharedConfigFiles } from '@smithy/shared-ini-file-loader';
 import { chmod } from 'fs/promises';
 import type { TokenSet, OrganizationInfo } from './types.js';
+import { DEFAULT_STORAGE_ENDPOINT } from '../constants.js';
 
 const CONFIG_DIR = join(homedir(), '.tigris');
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
@@ -135,22 +136,38 @@ export function getSelectedOrganization(): string | null {
 }
 
 /**
- * Get credentials from environment variables (AWS-compatible + Tigris-specific)
+ * Get credentials from environment variables.
+ * If any TIGRIS_ var is set, use TIGRIS_ vars exclusively.
+ * Otherwise, fall back to AWS_ vars.
  */
 export function getEnvCredentials(): CredentialsConfig | null {
-  const accessKeyId =
-    process.env.TIGRIS_ACCESS_KEY || process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey =
-    process.env.TIGRIS_SECRET_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+  // Check TIGRIS_ vars first
+  if (
+    process.env.TIGRIS_STORAGE_ACCESS_KEY_ID ||
+    process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY
+  ) {
+    const accessKeyId = process.env.TIGRIS_STORAGE_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY;
+
+    if (!accessKeyId || !secretAccessKey) {
+      return null;
+    }
+
+    const endpoint =
+      process.env.TIGRIS_STORAGE_ENDPOINT || DEFAULT_STORAGE_ENDPOINT;
+
+    return { accessKeyId, secretAccessKey, endpoint };
+  }
+
+  // Fall back to AWS_ vars
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
   if (!accessKeyId || !secretAccessKey) {
     return null;
   }
 
-  const endpoint =
-    process.env.TIGRIS_STORAGE_ENDPOINT ||
-    process.env.AWS_ENDPOINT_URL_S3 ||
-    'https://t3.storage.dev';
+  const endpoint = process.env.AWS_ENDPOINT_URL_S3 || DEFAULT_STORAGE_ENDPOINT;
 
   return { accessKeyId, secretAccessKey, endpoint };
 }

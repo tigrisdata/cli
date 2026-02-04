@@ -16,6 +16,7 @@ import {
 } from './storage.js';
 import { getAuthClient } from './client.js';
 import { getAuth0Config, getTigrisConfig } from './config.js';
+import { DEFAULT_STORAGE_ENDPOINT } from '../constants.js';
 
 const tigrisConfig = getTigrisConfig();
 const auth0Config = getAuth0Config();
@@ -52,7 +53,7 @@ export async function getStorageConfig(): Promise<TigrisStorageConfig> {
       endpoint:
         profileConfig.endpoint ||
         tigrisConfig.endpoint ||
-        'https://t3.storage.dev',
+        DEFAULT_STORAGE_ENDPOINT,
       iamEndpoint: profileConfig.iamEndpoint || tigrisConfig.iamEndpoint,
     };
   }
@@ -133,7 +134,7 @@ export async function getS3Client(): Promise<S3Client> {
       endpoint:
         profileConfig.endpoint ||
         tigrisConfig.endpoint ||
-        'https://t3.storage.dev',
+        DEFAULT_STORAGE_ENDPOINT,
       credentials: fromIni({ profile }),
     });
 
