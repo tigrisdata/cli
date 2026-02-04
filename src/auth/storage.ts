@@ -179,8 +179,11 @@ export function hasAwsProfile(): boolean {
   if (!process.env.AWS_PROFILE) {
     return false;
   }
-  const credentialsFile = join(homedir(), '.aws', 'credentials');
-  return existsSync(credentialsFile);
+  const awsDir = join(homedir(), '.aws');
+  return (
+    existsSync(join(awsDir, 'credentials')) ||
+    existsSync(join(awsDir, 'config'))
+  );
 }
 
 export type AwsProfileConfig = {
