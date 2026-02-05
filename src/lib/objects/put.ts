@@ -69,14 +69,14 @@ export default async function putObject(options: Record<string, unknown>) {
 
   // Use multipart upload for files larger than 100MB (or always for stdin)
   const useMultipart =
-    hasStdin || (fileSize !== undefined && fileSize > 100 * 1024 * 1024);
+    !file || (fileSize !== undefined && fileSize > 100 * 1024 * 1024);
 
   const { data, error } = await put(key, body, {
     access: access === 'public' ? 'public' : 'private',
     contentType,
     multipart: useMultipart,
     onUploadProgress: ({ loaded }) => {
-      if (fileSize !== undefined) {
+      if (fileSize !== undefined && fileSize > 0) {
         const percentage = Math.round((loaded / fileSize) * 100);
         process.stdout.write(
           `\rUploading: ${formatSize(loaded)} / ${formatSize(fileSize)} (${percentage}%)`
@@ -102,7 +102,7 @@ export default async function putObject(options: Record<string, unknown>) {
   const result = [
     {
       path: data.path,
-      size: formatSize(fileSize ?? 0),
+      size: formatSize(data.size ?? fileSize ?? 0),
       contentType: data.contentType || '-',
       modified: data.modified,
     },
