@@ -75,9 +75,8 @@ export default async function putObject(options: Record<string, unknown>) {
     access: access === 'public' ? 'public' : 'private',
     contentType,
     multipart: useMultipart,
-    onUploadProgress: ({ loaded }) => {
+    onUploadProgress: ({ loaded, percentage }) => {
       if (fileSize !== undefined && fileSize > 0) {
-        const percentage = Math.round((loaded / fileSize) * 100);
         process.stdout.write(
           `\rUploading: ${formatSize(loaded)} / ${formatSize(fileSize)} (${percentage}%)`
         );
