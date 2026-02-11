@@ -1,20 +1,21 @@
-import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import * as YAML from 'yaml';
+import specsYaml from '../specs.yaml';
 import type { Specs, CommandSpec, OperationSpec, Argument } from '../types.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 let cachedSpecs: Specs | null = null;
 
-const specsPath = join(__dirname, 'specs.yaml');
+const specsSource = specsYaml as unknown;
+
+function parseSpecs(): Specs {
+  if (typeof specsSource === 'string') {
+    return YAML.parse(specsSource, { schema: 'core' }) as Specs;
+  }
+  return specsSource as Specs;
+}
 
 export function loadSpecs(): Specs {
   if (!cachedSpecs) {
-    const specsContent = readFileSync(specsPath, 'utf8');
-    cachedSpecs = YAML.parse(specsContent, { schema: 'core' });
+    cachedSpecs = parseSpecs();
   }
   return cachedSpecs!;
 }

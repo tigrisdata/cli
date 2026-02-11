@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 
 import { Command as CommanderCommand } from 'commander';
-import { existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import type { Argument, CommandSpec } from './types.js';
+import { getModule, hasModule } from './lib/registry.js';
 import { loadSpecs } from './utils/specs.js';
 import { checkForUpdates } from './utils/update-check.js';
 import { version } from '../package.json';
@@ -26,9 +24,6 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const specs = loadSpecs();
 
 /**
@@ -45,16 +40,12 @@ function isValidCommandName(name: string): boolean {
  */
 function hasImplementation(pathParts: string[]): boolean {
   if (pathParts.length === 0) return false;
-
-  // Try direct file: lib/iam/policies/get.js
-  const directPath = join(__dirname, 'lib', ...pathParts) + '.js';
-  if (existsSync(directPath)) return true;
-
-  // Try index file: lib/iam/policies/get/index.js
-  const indexPath = join(__dirname, 'lib', ...pathParts, 'index.js');
-  if (existsSync(indexPath)) return true;
-
-  return false;
+  const [commandName, ...rest] = pathParts;
+  if (!commandName) {
+    return false;
+  }
+  const operationName = rest.length > 0 ? rest.join('.') : undefined;
+  return hasModule(commandName, operationName);
 }
 
 function formatArgumentHelp(arg: Argument): string {
@@ -313,16 +304,15 @@ function camelCase(str: string): string {
 async function loadModule(
   pathParts: string[]
 ): Promise<{ module: Record<string, unknown> | null; error: string | null }> {
-  const paths = [
-    `./lib/${pathParts.join('/')}.js`,
-    `./lib/${pathParts.join('/')}/index.js`,
-  ];
-
-  for (const path of paths) {
-    const module = await import(path).catch(() => null);
-    if (module) {
-      return { module, error: null };
-    }
+  const commandName = pathParts[0];
+  if (!commandName) {
+    return { module: null, error: 'Command not found' };
+  }
+  const operationName =
+    pathParts.length > 1 ? pathParts.slice(1).join('.') : undefined;
+  const module = getModule(commandName, operationName);
+  if (module) {
+    return { module, error: null };
   }
 
   const cmdDisplay = pathParts.join(' ');
