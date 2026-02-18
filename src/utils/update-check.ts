@@ -117,8 +117,20 @@ export function checkForUpdates(): void {
       !cache.lastNotified ||
       Date.now() - cache.lastNotified > notifyIntervalMs
     ) {
+      const isBinary =
+        (globalThis as { __TIGRIS_BINARY?: boolean }).__TIGRIS_BINARY === true;
+      const isWindows = process.platform === 'win32';
       const line1 = `Update available: ${currentVersion} → ${cache.latestVersion}`;
-      const line2 = 'Run `npm install -g @tigrisdata/cli` to upgrade.';
+      let line2: string;
+      if (!isBinary) {
+        line2 = 'Run `npm install -g @tigrisdata/cli` to upgrade.';
+      } else if (isWindows) {
+        line2 =
+          'Run `irm https://raw.githubusercontent.com/tigrisdata/cli/main/scripts/install.ps1 | iex`';
+      } else {
+        line2 =
+          'Run `curl -fsSL https://raw.githubusercontent.com/tigrisdata/cli/main/scripts/install.sh | sh`';
+      }
       const width = Math.max(line1.length, line2.length) + 4;
       const top = '┌' + '─'.repeat(width - 2) + '┐';
       const bot = '└' + '─'.repeat(width - 2) + '┘';
