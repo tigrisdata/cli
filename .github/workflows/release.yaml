@@ -30,12 +30,12 @@ jobs:
         with:
           node-version: '22'
 
-      # Install dependencies and build Node.js project
+      # Install dependencies, test, and build
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - run: npm run test
       - run: npm run publint
-
       - run: npm audit signatures
 
       # Release to GitHub and NPM
@@ -46,7 +46,7 @@ jobs:
         run: |
           npm run semantic-release
           git fetch --tags
-          TAG=$(git tag --points-at HEAD | grep "^v" | head -1)
+          TAG=$(git tag --points-at HEAD | grep "^v" | head -1 || true)
           echo "new_release_version=${TAG#v}" >> $GITHUB_OUTPUT
           echo "new_release_published=$( [ -n "$TAG" ] && echo true || echo false )" >> $GITHUB_OUTPUT
 
@@ -75,6 +75,28 @@ jobs:
       - name: Build binaries for all platforms
         run: npm run build:binary
 
+      - name: Verify binaries exist
+        run: |
+          cd bin
+          MISSING=0
+          for f in tigris-darwin-arm64 tigris-darwin-x64 tigris-linux-x64 tigris-linux-arm64; do
+            if [ ! -f "$f" ]; then
+              echo "ERROR: Missing binary: $f"
+              MISSING=1
+            fi
+          done
+          if [ ! -f "tigris-windows-x64.exe" ]; then
+            echo "ERROR: Missing binary: tigris-windows-x64.exe"
+            MISSING=1
+          fi
+          if [ "$MISSING" -eq 1 ]; then
+            echo "Binary build incomplete. Contents:"
+            ls -la
+            exit 1
+          fi
+          echo "All binaries present:"
+          ls -la
+
       - name: Package archives
         run: |
           cd bin
@@ -88,7 +110,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${{ needs.release.outputs.new_release_version }}"
-          gh release upload "$TAG" \
+
+          # Verify release exists
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            echo "ERROR: Release $TAG does not exist"
+            exit 1
+          fi
+
+          # Upload with retry
+          for asset in \
             bin/tigris-darwin-arm64.tar.gz \
             bin/tigris-darwin-x64.tar.gz \
             bin/tigris-linux-x64.tar.gz \
@@ -96,3 +126,20 @@ jobs:
             bin/tigris-windows-x64.zip \
             scripts/install.sh \
             scripts/install.ps1
+          do
+            echo "Uploading $asset..."
+            for attempt in 1 2 3; do
+              if gh release upload "$TAG" "$asset" --clobber; then
+                echo "  Uploaded successfully"
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "  ERROR: Failed to upload after 3 attempts"
+                exit 1
+              fi
+              echo "  Retry $((attempt + 1))..."
+              sleep 5
+            done
+          done
+
+          echo "All assets uploaded to $TAG"
