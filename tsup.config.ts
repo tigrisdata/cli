@@ -13,6 +13,7 @@ export default defineConfig((options) => ({
   entry: [
     'src/cli.ts',
     'src/**/*.ts',
+    'src/**/*.tsx',
     // Exclude binary-only files (use bun-specific import syntax)
     '!src/cli-binary.ts',
     '!src/specs-embedded.ts',

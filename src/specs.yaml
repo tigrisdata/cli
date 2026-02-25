@@ -1282,3 +1282,10 @@ commands:
                 type: positional
                 required: false
                 multiple: true
+
+  #########################
+  # Interactive TUI
+  #########################
+  - name: tui
+    description: Launch interactive terminal UI
+    alias: ui
