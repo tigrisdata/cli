@@ -1533,3 +1533,39 @@ commands:
                 type: positional
                 required: false
                 multiple: true
+
+  #########################
+  # MCP Server Management
+  #########################
+  - name: mcp
+    description: Configure the Tigris MCP server for AI agents and editors
+    examples:
+      - "tigris mcp install claude-code"
+      - "tigris mcp install cursor"
+      - "tigris mcp install claude-desktop --dry-run"
+    commands:
+      - name: install
+        description: Configure the Tigris MCP server for a specific AI agent or editor
+        alias: i
+        examples:
+          - "tigris mcp install claude-code"
+          - "tigris mcp install cursor"
+          - "tigris mcp install claude-desktop"
+          - "tigris mcp install windsurf"
+          - "tigris mcp install vscode"
+        messages:
+          onStart: 'Configuring Tigris MCP server for {{agent}}...'
+          onSuccess: 'Tigris MCP server configured for {{agent}}'
+          onFailure: 'Failed to configure MCP server'
+        arguments:
+          - name: agent
+            type: positional
+            required: true
+            description: "The AI agent or editor to configure (claude-code, claude-desktop, cursor, windsurf, vscode)"
+            options:
+              - claude-code
+              - claude-desktop
+              - cursor
+              - windsurf
+              - vscode
+    default: install
