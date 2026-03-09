@@ -4,9 +4,10 @@ import { createBucket } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('forks', 'create');
 
@@ -18,13 +19,11 @@ export default async function create(options: Record<string, unknown>) {
   const snapshot = getOption<string>(options, ['snapshot', 's', 'S']);
 
   if (!name) {
-    printFailure(context, 'Source bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Source bucket name is required' });
   }
 
   if (!forkName) {
-    printFailure(context, 'Fork name is required');
-    process.exit(1);
+    handleError({ message: 'Fork name is required' });
   }
 
   const { error } = await createBucket(forkName, {
@@ -34,9 +33,12 @@ export default async function create(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ source: name, fork: forkName, ...(snapshot && { snapshot }) });
+    return;
+  }
   printSuccess(context, { name, forkName });
 }

@@ -5,9 +5,10 @@ import { getStats, getBucketInfo, head } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
   msg,
 } from '../utils/messages.js';
+import { handleError } from '../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../utils/output.js';
 
 const context = msg('stat');
 
@@ -27,8 +28,12 @@ export default async function stat(options: {
     const { data, error } = await getStats({ config });
 
     if (error) {
-      printFailure(context, error.message);
-      process.exit(1);
+      handleError(error);
+    }
+
+    if (isJsonMode()) {
+      jsonSuccess(data.stats);
+      return;
     }
 
     const stats = [
@@ -51,14 +56,13 @@ export default async function stat(options: {
 
     console.log(output);
     printSuccess(context);
-    process.exit(0);
+    return;
   }
 
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    printFailure(context, 'Invalid path');
-    process.exit(1);
+    handleError({ message: 'Invalid path' });
   }
 
   // Bucket only (no path or just trailing slash): show bucket info
@@ -66,8 +70,12 @@ export default async function stat(options: {
     const { data, error } = await getBucketInfo(bucket, { config });
 
     if (error) {
-      printFailure(context, error.message);
-      process.exit(1);
+      handleError(error);
+    }
+
+    if (isJsonMode()) {
+      jsonSuccess({ bucket, ...data });
+      return;
     }
 
     const info = [
@@ -116,7 +124,7 @@ export default async function stat(options: {
 
     console.log(output);
     printSuccess(context, { bucket });
-    process.exit(0);
+    return;
   }
 
   // Object path: show object metadata
@@ -128,13 +136,16 @@ export default async function stat(options: {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   if (!data) {
-    printFailure(context, 'Object not found');
-    process.exit(1);
+    handleError({ message: 'Object not found' });
+  }
+
+  if (isJsonMode()) {
+    jsonSuccess({ bucket, key: path, ...data });
+    return;
   }
 
   const info = [
@@ -152,5 +163,4 @@ export default async function stat(options: {
 
   console.log(output);
   printSuccess(context, { bucket, path });
-  process.exit(0);
 }

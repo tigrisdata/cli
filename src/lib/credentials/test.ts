@@ -8,6 +8,8 @@ import {
   printFailure,
   msg,
 } from '../../utils/messages.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
+import { handleError } from '../../utils/errors.js';
 
 const context = msg('credentials', 'test');
 
@@ -19,11 +21,7 @@ export default async function test(options: Record<string, unknown>) {
   const config = await getStorageConfig();
 
   if (!config.accessKeyId && !config.sessionToken) {
-    printFailure(
-      context,
-      'No credentials found. Run "tigris configure" or "tigris login" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'No credentials found. Run "tigris configure" or "tigris login" first.' });
   }
 
   // Include organization ID if available
@@ -42,29 +40,32 @@ export default async function test(options: Record<string, unknown>) {
     });
 
     if (error) {
-      printFailure(
-        context,
-        `Current credentials don't have access to bucket "${bucket}"`
-      );
-      process.exit(1);
+      handleError({ message: `Current credentials don't have access to bucket "${bucket}"` });
     }
 
-    console.log(`  Bucket: ${bucket}`);
-    console.log(`  Access verified.`);
-    if (data.sourceBucketName) {
-      console.log(`  Fork of: ${data.sourceBucketName}`);
+    if (isJsonMode()) {
+      jsonSuccess({ valid: true, bucket, forkOf: data.sourceBucketName || undefined });
+    } else {
+      console.log(`  Bucket: ${bucket}`);
+      console.log(`  Access verified.`);
+      if (data.sourceBucketName) {
+        console.log(`  Fork of: ${data.sourceBucketName}`);
+      }
+      printSuccess(context);
     }
   } else {
     // Test general access by listing buckets
     const { data, error } = await listBuckets({ config: finalConfig });
 
     if (error) {
-      printFailure(context, "Current credentials don't have sufficient access");
-      process.exit(1);
+      handleError({ message: "Current credentials don't have sufficient access" });
     }
 
-    console.log(`  Access verified. Found ${data.buckets.length} bucket(s).`);
+    if (isJsonMode()) {
+      jsonSuccess({ valid: true, bucketCount: data.buckets.length });
+    } else {
+      console.log(`  Access verified. Found ${data.buckets.length} bucket(s).`);
+      printSuccess(context);
+    }
   }
-
-  printSuccess(context);
 }

@@ -8,9 +8,10 @@ import { get } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('objects', 'get');
 
@@ -114,13 +115,11 @@ export default async function getObject(options: Record<string, unknown>) {
   const modeOption = getOption<string>(options, ['mode', 'm', 'M']);
 
   if (!bucket) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   if (!key) {
-    printFailure(context, 'Object key is required');
-    process.exit(1);
+    handleError({ message: 'Object key is required' });
   }
 
   const config = await getStorageConfig();
@@ -137,13 +136,16 @@ export default async function getObject(options: Record<string, unknown>) {
     });
 
     if (error) {
-      printFailure(context, error.message);
-      process.exit(1);
+      handleError(error);
     }
 
     if (output) {
       const writeStream = createWriteStream(output);
       await pipeline(Readable.fromWeb(data as ReadableStream), writeStream);
+      if (isJsonMode()) {
+        jsonSuccess({ key, bucket, output });
+        return;
+      }
       printSuccess(context, { key, output });
     } else {
       // Stream to stdout for binary data
@@ -159,8 +161,13 @@ export default async function getObject(options: Record<string, unknown>) {
     });
 
     if (error) {
-      printFailure(context, error.message);
-      process.exit(1);
+      handleError(error);
+    }
+
+    if (isJsonMode()) {
+      jsonSuccess({ key, bucket, content: data, ...(output && { output }) });
+      if (output) writeFileSync(output, data);
+      return;
     }
 
     if (output) {

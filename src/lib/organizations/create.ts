@@ -10,10 +10,11 @@ import { isFlyUser } from '../../auth/fly.js';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printHint,
+    printHint,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('organizations', 'create');
 
@@ -52,8 +53,7 @@ export default async function create(options: Record<string, unknown>) {
   const name = getOption<string>(options, ['name', 'N']);
 
   if (!name) {
-    printFailure(context, 'Organization name is required');
-    process.exit(1);
+    handleError({ message: 'Organization name is required' });
   }
 
   const config = await getStorageConfig();
@@ -61,12 +61,15 @@ export default async function create(options: Record<string, unknown>) {
   const { data, error } = await createOrganization(name, { config });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   const id = data.id;
 
+  if (isJsonMode()) {
+    jsonSuccess({ name, id });
+    return;
+  }
   printSuccess(context, { name, id });
   printHint(context, { name });
 }

@@ -8,9 +8,10 @@ import {
 import {
   printStart,
   printSuccess,
-  printFailure,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('buckets', 'set-notifications');
 
@@ -30,17 +31,12 @@ export default async function setNotifications(
   const reset = getOption<boolean>(options, ['reset']);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   const flagCount = [enable, disable, reset].filter(Boolean).length;
   if (flagCount > 1) {
-    printFailure(
-      context,
-      'Only one of --enable, --disable, or --reset can be used'
-    );
-    process.exit(1);
+    handleError({ message: 'Only one of --enable, --disable, or --reset can be used' });
   }
 
   if (
@@ -51,8 +47,7 @@ export default async function setNotifications(
       username !== undefined ||
       password !== undefined)
   ) {
-    printFailure(context, 'Cannot use --reset with other options');
-    process.exit(1);
+    handleError({ message: 'Cannot use --reset with other options' });
   }
 
   if (
@@ -65,24 +60,18 @@ export default async function setNotifications(
     username === undefined &&
     password === undefined
   ) {
-    printFailure(context, 'Provide at least one option');
-    process.exit(1);
+    handleError({ message: 'Provide at least one option' });
   }
 
   if (token && (username !== undefined || password !== undefined)) {
-    printFailure(
-      context,
-      'Cannot use --token with --username/--password. Choose one auth method'
-    );
-    process.exit(1);
+    handleError({ message: 'Cannot use --token with --username/--password. Choose one auth method' });
   }
 
   if (
     (username !== undefined && password === undefined) ||
     (username === undefined && password !== undefined)
   ) {
-    printFailure(context, 'Both --username and --password are required');
-    process.exit(1);
+    handleError({ message: 'Both --username and --password are required' });
   }
 
   const config = await getStorageConfig();
@@ -122,9 +111,11 @@ export default async function setNotifications(
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ name, action: 'notifications_updated' });
+  }
   printSuccess(context, { name });
 }

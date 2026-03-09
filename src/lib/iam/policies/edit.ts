@@ -15,10 +15,11 @@ import {
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../../utils/messages.js';
+import { handleError } from '../../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../../utils/output.js';
 import { readStdin, parseDocument } from './utils.js';
 
 const context = msg('iam policies', 'edit');
@@ -33,19 +34,14 @@ export default async function edit(options: Record<string, unknown>) {
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Policies can only be edited when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'Policies can only be edited when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const authClient = getAuthClient();
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -62,11 +58,7 @@ export default async function edit(options: Record<string, unknown>) {
   // But if stdin is piped, we can't use interactive selection
   if (!resource) {
     if (!process.stdin.isTTY) {
-      printFailure(
-        context,
-        'Policy ARN is required when piping document via stdin.'
-      );
-      process.exit(1);
+      handleError({ message: 'Policy ARN is required when piping document via stdin.' });
     }
 
     const { data: listData, error: listError } = await listPolicies({
@@ -74,8 +66,7 @@ export default async function edit(options: Record<string, unknown>) {
     });
 
     if (listError) {
-      printFailure(context, listError.message);
-      process.exit(1);
+      handleError(listError);
     }
 
     if (!listData.policies || listData.policies.length === 0) {
@@ -111,8 +102,7 @@ export default async function edit(options: Record<string, unknown>) {
     try {
       newDocument = parseDocument(documentJson);
     } catch {
-      printFailure(context, 'Invalid JSON in policy document');
-      process.exit(1);
+      handleError({ message: 'Invalid JSON in policy document' });
     }
   } else if (!process.stdin.isTTY && !description) {
     // Read from stdin only if no description provided (description-only update doesn't need stdin)
@@ -120,14 +110,12 @@ export default async function edit(options: Record<string, unknown>) {
     try {
       newDocument = parseDocument(documentJson);
     } catch {
-      printFailure(context, 'Invalid JSON in policy document');
-      process.exit(1);
+      handleError({ message: 'Invalid JSON in policy document' });
     }
   }
 
   if (!newDocument && !description) {
-    printFailure(context, 'Either --document or --description is required.');
-    process.exit(1);
+    handleError({ message: 'Either --document or --description is required.' });
   }
 
   // Fetch existing policy to fill in missing values
@@ -136,8 +124,7 @@ export default async function edit(options: Record<string, unknown>) {
   });
 
   if (getError) {
-    printFailure(context, getError.message);
-    process.exit(1);
+    handleError(getError);
   }
 
   const { data, error } = await editPolicy(resource, {
@@ -147,9 +134,12 @@ export default async function edit(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ resource: data.resource });
+    return;
+  }
   printSuccess(context, { resource: data.resource });
 }

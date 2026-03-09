@@ -9,9 +9,10 @@ import {
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('organizations', 'select');
 
@@ -39,8 +40,7 @@ export default async function select(options: Record<string, unknown>) {
   const name = getOption<string>(options, ['name', 'N']);
 
   if (!name) {
-    printFailure(context, 'Organization name or ID is required');
-    process.exit(1);
+    handleError({ message: 'Organization name or ID is required' });
   }
 
   const config = await getStorageConfig();
@@ -48,8 +48,7 @@ export default async function select(options: Record<string, unknown>) {
   const { data, error } = await listOrganizations({ config });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   const orgs = data?.organizations ?? [];
@@ -61,15 +60,15 @@ export default async function select(options: Record<string, unknown>) {
     const availableOrgs = orgs
       .map((o) => `   - ${o.name} (${o.id})`)
       .join('\n');
-    printFailure(
-      context,
-      `Organization "${name}" not found\n\nAvailable organizations:\n${availableOrgs}`
-    );
-    process.exit(1);
+    handleError({ message: `Organization "${name}" not found\n\nAvailable organizations:\n${availableOrgs}` });
   }
 
   // Store selected organization
   await storeSelectedOrganization(org.id);
 
+  if (isJsonMode()) {
+    jsonSuccess({ id: org.id, name: org.name });
+    return;
+  }
   printSuccess(context, { name: org.name });
 }

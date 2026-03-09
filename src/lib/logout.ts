@@ -5,6 +5,8 @@ import {
   printFailure,
   msg,
 } from '../utils/messages.js';
+import { isJsonMode, jsonSuccess } from '../utils/output.js';
+import { handleError } from '../utils/errors.js';
 
 const context = msg('logout');
 
@@ -14,13 +16,16 @@ export default async function logout(): Promise<void> {
     // Clear all authentication data
     await clearAllData();
 
-    printSuccess(context);
+    if (isJsonMode()) {
+      jsonSuccess({ action: 'logout' });
+    } else {
+      printSuccess(context);
+    }
   } catch (error) {
     if (error instanceof Error) {
-      printFailure(context, error.message);
+      handleError(error);
     } else {
-      printFailure(context);
+      handleError({ message: 'Failed to logout' });
     }
-    process.exit(1);
   }
 }

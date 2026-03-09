@@ -5,10 +5,11 @@ import { listBuckets, getBucketInfo } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('forks', 'list');
 
@@ -19,8 +20,7 @@ export default async function list(options: Record<string, unknown>) {
   const format = getOption<string>(options, ['format', 'f', 'F'], 'table');
 
   if (!name) {
-    printFailure(context, 'Source bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Source bucket name is required' });
   }
 
   const config = await getStorageConfig();
@@ -31,8 +31,7 @@ export default async function list(options: Record<string, unknown>) {
   });
 
   if (infoError) {
-    printFailure(context, infoError.message);
-    process.exit(1);
+    handleError(infoError);
   }
 
   if (!bucketInfo.hasForks) {
@@ -44,8 +43,7 @@ export default async function list(options: Record<string, unknown>) {
   const { data, error } = await listBuckets({ config });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   // Get info for each bucket to find forks
@@ -64,7 +62,16 @@ export default async function list(options: Record<string, unknown>) {
   }
 
   if (forks.length === 0) {
+    if (isJsonMode()) {
+      jsonSuccess({ source: name, forks: [] });
+      return;
+    }
     printEmpty(context);
+    return;
+  }
+
+  if (isJsonMode()) {
+    jsonSuccess({ source: name, forks });
     return;
   }
 

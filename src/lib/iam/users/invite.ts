@@ -8,9 +8,10 @@ import { inviteUser } from '@tigrisdata/iam';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../../utils/messages.js';
+import { handleError } from '../../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../../utils/output.js';
 
 const context = msg('iam users', 'invite');
 
@@ -20,11 +21,7 @@ export default async function invite(options: Record<string, unknown>) {
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Users can only be invited when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'Users can only be invited when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const selectedOrg = getSelectedOrganization();
@@ -48,19 +45,14 @@ export default async function invite(options: Record<string, unknown>) {
       : [];
 
   if (emails.length === 0) {
-    printFailure(context, 'Email address is required');
-    process.exit(1);
+    handleError({ message: 'Email address is required' });
   }
 
   const validRoles = ['admin', 'member'] as const;
   type Role = (typeof validRoles)[number];
 
   if (!validRoles.includes(roleInput as Role)) {
-    printFailure(
-      context,
-      `Invalid role "${roleInput}". Must be one of: ${validRoles.join(', ')}`
-    );
-    process.exit(1);
+    handleError({ message: `Invalid role "${roleInput}". Must be one of: ${validRoles.join(', ')}` });
   }
 
   const role: Role = roleInput as Role;
@@ -69,8 +61,7 @@ export default async function invite(options: Record<string, unknown>) {
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -88,9 +79,12 @@ export default async function invite(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ invited: invitations });
+    return;
+  }
   printSuccess(context, { email: emails.join(', ') });
 }

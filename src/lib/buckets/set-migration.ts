@@ -5,9 +5,10 @@ import { setBucketMigration } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('buckets', 'set-migration');
 
@@ -27,8 +28,7 @@ export default async function setMigration(options: Record<string, unknown>) {
   const disable = getOption<boolean>(options, ['disable']);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   if (
@@ -40,8 +40,7 @@ export default async function setMigration(options: Record<string, unknown>) {
       secretKey !== undefined ||
       writeThrough !== undefined)
   ) {
-    printFailure(context, 'Cannot use --disable with other migration options');
-    process.exit(1);
+    handleError({ message: 'Cannot use --disable with other migration options' });
   }
 
   const config = await getStorageConfig();
@@ -60,20 +59,21 @@ export default async function setMigration(options: Record<string, unknown>) {
     });
 
     if (error) {
-      printFailure(context, error.message);
-      process.exit(1);
+      handleError(error);
     }
 
-    printSuccess(context, { name });
+    if (isJsonMode()) {
+      jsonSuccess({ name, action: 'migration_updated' });
+    }
+    if (isJsonMode()) {
+    jsonSuccess({ name, action: 'migration_updated' });
+  }
+  printSuccess(context, { name });
     return;
   }
 
   if (!bucket || !endpoint || !region || !accessKey || !secretKey) {
-    printFailure(
-      context,
-      'Required: --bucket, --endpoint, --region, --access-key, --secret-key'
-    );
-    process.exit(1);
+    handleError({ message: 'Required: --bucket, --endpoint, --region, --access-key, --secret-key' });
   }
 
   const { error } = await setBucketMigration(name, {
@@ -90,9 +90,11 @@ export default async function setMigration(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ name, action: 'migration_updated' });
+  }
   printSuccess(context, { name });
 }

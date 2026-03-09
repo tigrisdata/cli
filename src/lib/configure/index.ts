@@ -8,6 +8,8 @@ import {
   printFailure,
   msg,
 } from '../../utils/messages.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
+import { handleError } from '../../utils/errors.js';
 
 const context = msg('configure');
 
@@ -74,8 +76,7 @@ export default async function configure(options: Record<string, unknown>) {
 
   // Validate that all required fields are present
   if (!accessKey || !accessSecret || !endpoint) {
-    printFailure(context, 'All credentials are required');
-    process.exit(1);
+    handleError({ message: 'All credentials are required' });
   }
 
   // Store credentials
@@ -89,9 +90,12 @@ export default async function configure(options: Record<string, unknown>) {
     // Store login method
     await storeLoginMethod('credentials');
 
-    printSuccess(context);
+    if (isJsonMode()) {
+      jsonSuccess({ action: 'configured', endpoint: endpoint as string });
+    } else {
+      printSuccess(context);
+    }
   } catch {
-    printFailure(context, 'Failed to save credentials');
-    process.exit(1);
+    handleError({ message: 'Failed to save credentials' });
   }
 }

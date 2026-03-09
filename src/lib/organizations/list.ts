@@ -14,10 +14,11 @@ import Enquirer from 'enquirer';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('organizations', 'list');
 
@@ -63,15 +64,31 @@ export default async function list(options: Record<string, unknown>) {
     const { data, error } = await listOrganizations({ config });
 
     if (error) {
-      printFailure(context, error.message);
-      process.exit(1);
+      handleError(error);
     }
 
     orgs = data?.organizations ?? [];
   }
 
   if (orgs.length === 0) {
+    if (isJsonMode()) {
+      jsonSuccess({ organizations: [] });
+      return;
+    }
     printEmpty(context);
+    return;
+  }
+
+  if (isJsonMode()) {
+    const currentSelection = getSelectedOrganization();
+    jsonSuccess({
+      organizations: orgs.map((org) => ({
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        selected: org.id === currentSelection,
+      })),
+    });
     return;
   }
 

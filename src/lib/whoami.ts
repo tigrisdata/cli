@@ -7,6 +7,8 @@ import {
 } from '../auth/storage.js';
 import { getStorageConfig } from '../auth/s3-client.js';
 import { printFailure, printAlreadyDone, msg } from '../utils/messages.js';
+import { isJsonMode, jsonSuccess } from '../utils/output.js';
+import { handleError } from '../utils/errors.js';
 
 const context = msg('whoami');
 
@@ -53,8 +55,7 @@ export default async function whoami(): Promise<void> {
       const { data, error } = await listOrganizations({ config });
 
       if (error) {
-        printFailure(context, error.message);
-        process.exit(1);
+        handleError(error);
       }
 
       const organizations = data?.organizations ?? [];
@@ -87,14 +88,26 @@ export default async function whoami(): Promise<void> {
       );
     }
 
+    if (isJsonMode()) {
+      const result: Record<string, unknown> = { email, userId, loginMethod };
+      if (loginMethod === 'oauth') {
+        const config = await getStorageConfig();
+        const selectedOrg = getSelectedOrganization();
+        const { data } = await listOrganizations({ config });
+        result.organizations = data?.organizations ?? [];
+        result.activeOrganization = selectedOrg;
+      }
+      jsonSuccess(result);
+      return;
+    }
+
     lines.push('');
     console.log(lines.join('\n'));
   } catch (error) {
     if (error instanceof Error) {
-      printFailure(context, error.message);
+      handleError(error);
     } else {
-      printFailure(context);
+      handleError({ message: 'An unknown error occurred' });
     }
-    process.exit(1);
   }
 }

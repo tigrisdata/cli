@@ -5,9 +5,10 @@ import { setBucketCors } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('buckets', 'set-cors');
 
@@ -27,8 +28,7 @@ export default async function setCors(options: Record<string, unknown>) {
   const reset = getOption<boolean>(options, ['reset']);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   if (
@@ -40,18 +40,15 @@ export default async function setCors(options: Record<string, unknown>) {
       maxAge !== undefined ||
       override)
   ) {
-    printFailure(context, 'Cannot use --reset with other options');
-    process.exit(1);
+    handleError({ message: 'Cannot use --reset with other options' });
   }
 
   if (!reset && !origins) {
-    printFailure(context, 'Provide --origins or --reset');
-    process.exit(1);
+    handleError({ message: 'Provide --origins or --reset' });
   }
 
   if (maxAge !== undefined && (isNaN(Number(maxAge)) || Number(maxAge) <= 0)) {
-    printFailure(context, '--max-age must be a positive number');
-    process.exit(1);
+    handleError({ message: '--max-age must be a positive number' });
   }
 
   const config = await getStorageConfig();
@@ -80,9 +77,11 @@ export default async function setCors(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ name, action: 'cors_updated' });
+  }
   printSuccess(context, { name });
 }

@@ -12,9 +12,10 @@ import type { BucketLocations } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const { prompt } = enquirer;
 
@@ -165,16 +166,14 @@ export default async function create(options: Record<string, unknown>) {
         })),
       } as Parameters<typeof prompt>[0]);
       if (regions.length < 2) {
-        printFailure(context, 'Dual region requires at least two regions');
-        process.exit(1);
+        handleError({ message: 'Dual region requires at least two regions' });
       }
       parsedLocations = parseLocations(regions);
     }
   }
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   const { error } = await createBucket(name, {
@@ -186,9 +185,11 @@ export default async function create(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ name, action: 'created' });
+  }
   printSuccess(context, { name });
 }

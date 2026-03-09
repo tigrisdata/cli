@@ -12,6 +12,8 @@ import {
   printFailure,
   msg,
 } from '../../utils/messages.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
+import { handleError } from '../../utils/errors.js';
 
 const context = msg('login', 'credentials');
 
@@ -69,8 +71,7 @@ export default async function credentials(options: Record<string, unknown>) {
 
   // Validate
   if (!accessKey || !accessSecret) {
-    printFailure(context, 'Access key and secret are required');
-    process.exit(1);
+    handleError({ message: 'Access key and secret are required' });
   }
 
   // Get endpoint: configured → default
@@ -85,5 +86,10 @@ export default async function credentials(options: Record<string, unknown>) {
   });
 
   await storeLoginMethod('credentials');
-  printSuccess(context);
+
+  if (isJsonMode()) {
+    jsonSuccess({ action: 'login', method: 'credentials' });
+  } else {
+    printSuccess(context);
+  }
 }

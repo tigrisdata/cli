@@ -1,4 +1,3 @@
-import * as readline from 'readline';
 import {
   isRemotePath,
   parseRemotePath,
@@ -12,50 +11,35 @@ import { getStorageConfig } from '../auth/s3-client.js';
 import { formatSize } from '../utils/format.js';
 import { get, put, remove, list, head } from '@tigrisdata/storage';
 import { calculateUploadParams } from '../utils/upload.js';
-
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} (y/N): `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y');
-    });
-  });
-}
+import { confirm } from '../utils/confirm.js';
+import { isJsonMode, output } from '../utils/output.js';
+import { handleError } from '../utils/errors.js';
 
 export default async function mv(options: Record<string, unknown>) {
   const src = getOption<string>(options, ['src']);
   const dest = getOption<string>(options, ['dest']);
-  const force = getOption<boolean>(options, ['force', 'f', 'F']);
+  const yes = getOption<boolean>(options, ['yes', 'y']);
+  const force = getOption<boolean>(options, ['force', 'f', 'F']) || yes;
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
+  const dryRun = !!getOption<boolean>(options, ['dryRun', 'dry-run']);
 
   if (!src || !dest) {
-    console.error('both src and dest arguments are required');
-    process.exit(1);
+    handleError({ message: 'both src and dest arguments are required' });
   }
 
   if (!isRemotePath(src) || !isRemotePath(dest)) {
-    console.error(
-      'Both src and dest must be remote Tigris paths (t3:// or tigris://)'
-    );
-    process.exit(1);
+    handleError({ message: 'Both src and dest must be remote Tigris paths (t3:// or tigris://)' });
   }
 
   const srcPath = parseRemotePath(src);
   const destPath = parseRemotePath(dest);
 
   if (!srcPath.bucket) {
-    console.error('Invalid source path');
-    process.exit(1);
+    handleError({ message: 'Invalid source path' });
   }
 
   if (!destPath.bucket) {
-    console.error('Invalid destination path');
-    process.exit(1);
+    handleError({ message: 'Invalid destination path' });
   }
 
   // Cannot move a bucket itself
@@ -63,8 +47,7 @@ export default async function mv(options: Record<string, unknown>) {
   // t3://bucket/ (no path, trailing slash) = move all contents from bucket root
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcPath.path && !rawEndsWithSlash) {
-    console.error('Cannot move a bucket. Provide a path within the bucket.');
-    process.exit(1);
+    handleError({ message: 'Cannot move a bucket. Provide a path within the bucket.' });
   }
 
   const config = await getStorageConfig({ withCredentialProvider: true });
@@ -80,10 +63,7 @@ export default async function mv(options: Record<string, unknown>) {
   }
 
   if (isFolder && !isWildcard && !recursive) {
-    console.error(
-      `Source is a remote folder (not moved). Use -r to move recursively.`
-    );
-    process.exit(1);
+    handleError({ message: 'Source is a remote folder (not moved). Use -r to move recursively.' });
   }
 
   if (isWildcard || isFolder) {
@@ -114,8 +94,7 @@ export default async function mv(options: Record<string, unknown>) {
       srcPath.bucket === destPath.bucket &&
       prefix === effectiveDestPrefixWithSlash
     ) {
-      console.error('Source and destination are the same');
-      process.exit(1);
+      handleError({ message: 'Source and destination are the same' });
     }
 
     const { items, error } = await listAllItems(
@@ -125,8 +104,7 @@ export default async function mv(options: Record<string, unknown>) {
     );
 
     if (error) {
-      console.error(error.message);
-      process.exit(1);
+      handleError(error);
     }
 
     // Filter out folder markers - they're handled separately below
@@ -161,6 +139,17 @@ export default async function mv(options: Record<string, unknown>) {
     }
 
     const totalToMove = itemsToMove.length + (hasFolderMarker ? 1 : 0);
+
+    if (dryRun) {
+      const wouldMove = itemsToMove.map((item) => {
+        const relativePath = prefix ? item.name.slice(prefix.length) : item.name;
+        const destKey = effectiveDestPrefix ? `${effectiveDestPrefix}/${relativePath}` : relativePath;
+        return { src: `t3://${srcPath.bucket}/${item.name}`, dest: `t3://${destPath.bucket}/${destKey}` };
+      });
+      output(`[dry-run] Would move ${totalToMove} object(s)`, { moves: wouldMove, count: totalToMove, action: 'would_move', dryRun: true });
+      return;
+    }
+
     if (!force) {
       const confirmed = await confirm(
         `Are you sure you want to move ${totalToMove} object(s)?`
@@ -187,11 +176,15 @@ export default async function mv(options: Record<string, unknown>) {
       );
 
       if (moveResult.error) {
-        console.error(`Failed to move ${item.name}: ${moveResult.error}`);
+        if (!isJsonMode()) {
+          console.error(`Failed to move ${item.name}: ${moveResult.error}`);
+        }
       } else {
-        console.log(
-          `Moved t3://${srcPath.bucket}/${item.name} -> t3://${destPath.bucket}/${destKey}`
-        );
+        if (!isJsonMode()) {
+          console.log(
+            `Moved t3://${srcPath.bucket}/${item.name} -> t3://${destPath.bucket}/${destKey}`
+          );
+        }
         moved++;
       }
     }
@@ -237,7 +230,7 @@ export default async function mv(options: Record<string, unknown>) {
       moved = 1;
     }
 
-    console.log(`Moved ${moved} object(s)`);
+    output(`Moved ${moved} object(s)`, { moved, action: 'moved' });
   } else {
     // Move single object
     const srcFileName = srcPath.path.split('/').pop()!;
@@ -265,8 +258,17 @@ export default async function mv(options: Record<string, unknown>) {
 
     // Check for same location
     if (srcPath.bucket === destPath.bucket && srcPath.path === destKey) {
-      console.error('Source and destination are the same');
-      process.exit(1);
+      handleError({ message: 'Source and destination are the same' });
+    }
+
+    if (dryRun) {
+      output(`[dry-run] Would move 't3://${srcPath.bucket}/${srcPath.path}' -> 't3://${destPath.bucket}/${destKey}'`, {
+        src: `t3://${srcPath.bucket}/${srcPath.path}`,
+        dest: `t3://${destPath.bucket}/${destKey}`,
+        action: 'would_move',
+        dryRun: true,
+      });
+      return;
     }
 
     if (!force) {
@@ -289,15 +291,14 @@ export default async function mv(options: Record<string, unknown>) {
     );
 
     if (result.error) {
-      console.error(result.error);
-      process.exit(1);
+      handleError({ message: result.error });
     }
 
-    console.log(
-      `Moved t3://${srcPath.bucket}/${srcPath.path} -> t3://${destPath.bucket}/${destKey}`
+    output(
+      `Moved t3://${srcPath.bucket}/${srcPath.path} -> t3://${destPath.bucket}/${destKey}`,
+      { src: `t3://${srcPath.bucket}/${srcPath.path}`, dest: `t3://${destPath.bucket}/${destKey}`, action: 'moved' }
     );
   }
-  process.exit(0);
 }
 
 async function moveObject(

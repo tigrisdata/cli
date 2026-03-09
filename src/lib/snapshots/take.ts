@@ -4,9 +4,10 @@ import { createBucketSnapshot } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('snapshots', 'take');
 
@@ -20,8 +21,7 @@ export default async function take(options: Record<string, unknown>) {
   ]);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   const config = await getStorageConfig();
@@ -32,10 +32,17 @@ export default async function take(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({
+      bucket: name,
+      snapshotName: snapshotName || data?.snapshotVersion,
+      version: data?.snapshotVersion,
+    });
+    return;
+  }
   printSuccess(context, {
     name,
     snapshotName: snapshotName || data?.snapshotVersion,

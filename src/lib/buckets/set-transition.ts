@@ -5,9 +5,10 @@ import { setBucketLifecycle } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('buckets', 'set-transition');
 
@@ -27,50 +28,34 @@ export default async function setTransitions(options: Record<string, unknown>) {
   const disable = getOption<boolean>(options, ['disable']);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   if (enable && disable) {
-    printFailure(context, 'Cannot use both --enable and --disable');
-    process.exit(1);
+    handleError({ message: 'Cannot use both --enable and --disable' });
   }
 
   if (
     disable &&
     (days !== undefined || date !== undefined || storageClass !== undefined)
   ) {
-    printFailure(
-      context,
-      'Cannot use --disable with --days, --date, or --storage-class'
-    );
-    process.exit(1);
+    handleError({ message: 'Cannot use --disable with --days, --date, or --storage-class' });
   }
 
   if (!enable && !disable && days === undefined && date === undefined) {
-    printFailure(context, 'Provide --days, --date, --enable, or --disable');
-    process.exit(1);
+    handleError({ message: 'Provide --days, --date, --enable, or --disable' });
   }
 
   if ((days !== undefined || date !== undefined) && !storageClass) {
-    printFailure(
-      context,
-      '--storage-class is required when setting --days or --date'
-    );
-    process.exit(1);
+    handleError({ message: '--storage-class is required when setting --days or --date' });
   }
 
   if (storageClass && !VALID_TRANSITION_CLASSES.includes(storageClass)) {
-    printFailure(
-      context,
-      `--storage-class must be one of: ${VALID_TRANSITION_CLASSES.join(', ')} (STANDARD is not a valid transition target)`
-    );
-    process.exit(1);
+    handleError({ message: `--storage-class must be one of: ${VALID_TRANSITION_CLASSES.join(', ')} (STANDARD is not a valid transition target)` });
   }
 
   if (days !== undefined && (isNaN(Number(days)) || Number(days) <= 0)) {
-    printFailure(context, '--days must be a positive number');
-    process.exit(1);
+    handleError({ message: '--days must be a positive number' });
   }
 
   if (date !== undefined) {
@@ -79,11 +64,7 @@ export default async function setTransitions(options: Record<string, unknown>) {
       !/^\d{4}-\d{2}-\d{2}/.test(date) ||
       isNaN(new Date(date).getTime())
     ) {
-      printFailure(
-        context,
-        '--date must be a valid ISO-8601 date (e.g. 2026-06-01)'
-      );
-      process.exit(1);
+      handleError({ message: '--date must be a valid ISO-8601 date (e.g. 2026-06-01)' });
     }
   }
 
@@ -110,9 +91,11 @@ export default async function setTransitions(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ name, action: 'transition_updated' });
+  }
   printSuccess(context, { name });
 }

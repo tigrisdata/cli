@@ -9,26 +9,25 @@ import { getSelectedOrganization } from '../auth/storage.js';
 import { getTigrisConfig } from '../auth/config.js';
 import { formatJson } from '../utils/format.js';
 import enquirer from 'enquirer';
+import { handleError } from '../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../utils/output.js';
 const { prompt } = enquirer;
 
 export default async function presign(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);
 
   if (!pathString) {
-    console.error('path argument is required');
-    process.exit(1);
+    handleError({ message: 'path argument is required' });
   }
 
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    console.error('Invalid path');
-    process.exit(1);
+    handleError({ message: 'Invalid path' });
   }
 
   if (!path) {
-    console.error('Object key is required');
-    process.exit(1);
+    handleError({ message: 'Object key is required' });
   }
 
   const method = getOption<string>(options, ['method', 'm']) ?? 'get';
@@ -55,20 +54,18 @@ export default async function presign(options: Record<string, unknown>) {
     const loginMethod = await getLoginMethod();
 
     if (loginMethod !== 'oauth') {
-      console.error(
-        'Presigning requires an access key. Pass --access-key or configure credentials.'
-      );
-      process.exit(1);
+      handleError({
+        message: 'Presigning requires an access key. Pass --access-key or configure credentials.',
+      });
     }
 
     accessKeyId = await resolveAccessKeyInteractively(bucket);
   }
 
   if (!accessKeyId) {
-    console.error(
-      'Presigning requires an access key. Pass --access-key or configure credentials.'
-    );
-    process.exit(1);
+    handleError({
+      message: 'Presigning requires an access key. Pass --access-key or configure credentials.',
+    });
   }
 
   const { data, error } = await getPresignedUrl(path, {
@@ -82,8 +79,18 @@ export default async function presign(options: Record<string, unknown>) {
   });
 
   if (error) {
-    console.error(error.message);
-    process.exit(1);
+    handleError(error);
+  }
+
+  if (isJsonMode()) {
+    jsonSuccess({
+      url: data.url,
+      expiresIn: data.expiresIn,
+      method,
+      bucket,
+      key: path,
+    });
+    return;
   }
 
   if (format === 'json') {
@@ -99,18 +106,15 @@ export default async function presign(options: Record<string, unknown>) {
   } else {
     console.log(data.url);
   }
-
-  process.exit(0);
 }
 
 async function resolveAccessKeyInteractively(
   targetBucket: string
 ): Promise<string> {
   if (!process.stdin.isTTY) {
-    console.error(
-      'Presigning requires an access key. Pass --access-key tid_...'
-    );
-    process.exit(1);
+    handleError({
+      message: 'Presigning requires an access key. Pass --access-key tid_...',
+    });
   }
 
   const authClient = getAuthClient();
@@ -127,15 +131,13 @@ async function resolveAccessKeyInteractively(
   });
 
   if (error) {
-    console.error(`Failed to list access keys: ${error.message}`);
-    process.exit(1);
+    handleError(error);
   }
 
   if (!data.accessKeys || data.accessKeys.length === 0) {
-    console.error(
-      'No access keys found. Create one with "tigris access-keys create <name>"'
-    );
-    process.exit(1);
+    handleError({
+      message: 'No access keys found. Create one with "tigris access-keys create <name>"',
+    });
   }
 
   // Filter to active keys that have access to the target bucket
@@ -156,10 +158,9 @@ async function resolveAccessKeyInteractively(
     );
 
     if (activeKeys.length === 0) {
-      console.error(
-        'No active access keys found. Create one with "tigris access-keys create <name>"'
-      );
-      process.exit(1);
+      handleError({
+        message: 'No active access keys found. Create one with "tigris access-keys create <name>"',
+      });
     }
 
     console.error(

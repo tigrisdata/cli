@@ -3,6 +3,8 @@ import { getOption } from '../utils/options.js';
 import { formatOutput, formatSize } from '../utils/format.js';
 import { getStorageConfig } from '../auth/s3-client.js';
 import { list, listBuckets } from '@tigrisdata/storage';
+import { handleError } from '../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../utils/output.js';
 
 export default async function ls(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);
@@ -13,14 +15,18 @@ export default async function ls(options: Record<string, unknown>) {
     const { data, error } = await listBuckets({ config });
 
     if (error) {
-      console.error(error.message);
-      process.exit(1);
+      handleError(error);
     }
 
     const buckets = (data.buckets || []).map((bucket) => ({
       name: bucket.name,
       created: bucket.creationDate,
     }));
+
+    if (isJsonMode()) {
+      jsonSuccess(buckets);
+      return;
+    }
 
     const output = formatOutput(buckets, 'table', 'buckets', 'bucket', [
       { key: 'name', header: 'Name' },
@@ -34,8 +40,7 @@ export default async function ls(options: Record<string, unknown>) {
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    console.error('Invalid path');
-    process.exit(1);
+    handleError({ message: 'Invalid path' });
   }
 
   const config = await getStorageConfig();
@@ -52,8 +57,7 @@ export default async function ls(options: Record<string, unknown>) {
   });
 
   if (error) {
-    console.error(error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   const objects = (data.items || [])
@@ -78,6 +82,11 @@ export default async function ls(options: Record<string, unknown>) {
       (item, index, arr) =>
         item.key !== '' && arr.findIndex((i) => i.key === item.key) === index
     );
+
+  if (isJsonMode()) {
+    jsonSuccess(objects);
+    return;
+  }
 
   const output = formatOutput(objects, 'table', 'objects', 'object', [
     { key: 'key', header: 'Key' },

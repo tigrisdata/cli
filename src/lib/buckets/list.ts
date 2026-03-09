@@ -5,10 +5,11 @@ import { listBuckets } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
   printEmpty,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('buckets', 'list');
 
@@ -23,11 +24,14 @@ export default async function list(options: Record<string, unknown>) {
     });
 
     if (error) {
-      printFailure(context, error.message);
-      process.exit(1);
+      handleError(error);
     }
 
     if (!data.buckets || data.buckets.length === 0) {
+      if (isJsonMode()) {
+        jsonSuccess([]);
+        return;
+      }
       printEmpty(context);
       return;
     }
@@ -37,6 +41,11 @@ export default async function list(options: Record<string, unknown>) {
       created: bucket.creationDate,
     }));
 
+    if (isJsonMode()) {
+      jsonSuccess(buckets);
+      return;
+    }
+
     const output = formatOutput(buckets, format!, 'buckets', 'bucket', [
       { key: 'name', header: 'Name' },
       { key: 'created', header: 'Created' },
@@ -45,11 +54,6 @@ export default async function list(options: Record<string, unknown>) {
     console.log(output);
     printSuccess(context, { count: buckets.length });
   } catch (error) {
-    if (error instanceof Error) {
-      printFailure(context, error.message);
-    } else {
-      printFailure(context, 'An unknown error occurred');
-    }
-    process.exit(1);
+    handleError(error instanceof Error ? error : { message: 'An unknown error occurred' });
   }
 }

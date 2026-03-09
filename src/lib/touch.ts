@@ -2,25 +2,24 @@ import { parseAnyPath } from '../utils/path.js';
 import { getOption } from '../utils/options.js';
 import { getStorageConfig } from '../auth/s3-client.js';
 import { put } from '@tigrisdata/storage';
+import { output } from '../utils/output.js';
+import { handleError } from '../utils/errors.js';
 
 export default async function touch(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);
 
   if (!pathString) {
-    console.error('path argument is required');
-    process.exit(1);
+    handleError({ message: 'path argument is required' });
   }
 
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    console.error('Invalid path');
-    process.exit(1);
+    handleError({ message: 'Invalid path' });
   }
 
   if (!path) {
-    console.error('Object key is required (use mk to create buckets)');
-    process.exit(1);
+    handleError({ message: 'Object key is required (use mk to create buckets)' });
   }
 
   const config = await getStorageConfig();
@@ -33,10 +32,8 @@ export default async function touch(options: Record<string, unknown>) {
   });
 
   if (error) {
-    console.error(error.message);
-    process.exit(1);
+    handleError(error);
   }
 
-  console.log(`Created '${bucket}/${path}'`);
-  process.exit(0);
+  output(`Created '${bucket}/${path}'`, { bucket, path, action: 'created' });
 }

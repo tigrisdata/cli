@@ -6,9 +6,10 @@ import { parseLocations } from '../../utils/locations.js';
 import {
   printStart,
   printSuccess,
-  printFailure,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('buckets', 'set');
 
@@ -55,8 +56,7 @@ export default async function set(options: Record<string, unknown>) {
   ]);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   // Check if at least one setting is provided
@@ -70,8 +70,7 @@ export default async function set(options: Record<string, unknown>) {
     enableDeleteProtection === undefined &&
     enableAdditionalHeaders === undefined
   ) {
-    printFailure(context, 'At least one setting is required');
-    process.exit(1);
+    handleError({ message: 'At least one setting is required' });
   }
 
   const config = await getStorageConfig();
@@ -130,9 +129,11 @@ export default async function set(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ name, action: 'updated' });
+  }
   printSuccess(context, { name });
 }

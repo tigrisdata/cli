@@ -9,10 +9,11 @@ import { deletePolicy, listPolicies } from '@tigrisdata/iam';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../../utils/messages.js';
+import { handleError } from '../../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../../utils/output.js';
 
 const context = msg('iam policies', 'delete');
 
@@ -24,19 +25,14 @@ export default async function del(options: Record<string, unknown>) {
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Policies can only be deleted when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'Policies can only be deleted when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const authClient = getAuthClient();
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -56,8 +52,7 @@ export default async function del(options: Record<string, unknown>) {
     });
 
     if (listError) {
-      printFailure(context, listError.message);
-      process.exit(1);
+      handleError(listError);
     }
 
     if (!listData.policies || listData.policies.length === 0) {
@@ -83,9 +78,12 @@ export default async function del(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ resource, action: 'deleted' });
+    return;
+  }
   printSuccess(context, { resource });
 }

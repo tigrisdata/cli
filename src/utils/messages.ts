@@ -1,5 +1,6 @@
 import { getCommandSpec } from './specs.js';
 import type { CommandSpec, OperationSpec, Messages } from '../types.js';
+import { isJsonMode } from './output.js';
 
 export type MessageVariables = Record<
   string,
@@ -62,6 +63,7 @@ export function printStart(
   context: MessageContext,
   variables?: MessageVariables
 ): void {
+  if (isJsonMode()) return; // suppress in JSON mode
   if (!isTTY()) return;
   const messages = getMessages(context);
   if (messages?.onStart) {
@@ -77,6 +79,7 @@ export function printSuccess(
   context: MessageContext,
   variables?: MessageVariables
 ): void {
+  if (isJsonMode()) return; // suppress in JSON mode (caller emits JSON)
   if (!isTTY()) return;
   const messages = getMessages(context);
   if (messages?.onSuccess) {
@@ -94,6 +97,7 @@ export function printFailure(
   error?: string,
   variables?: MessageVariables
 ): void {
+  if (isJsonMode()) return; // suppress in JSON mode (caller uses handleError)
   const messages = getMessages(context);
   if (messages?.onFailure) {
     console.error(
@@ -113,6 +117,7 @@ export function printEmpty(
   context: MessageContext,
   variables?: MessageVariables
 ): void {
+  if (isJsonMode()) return; // suppress in JSON mode (caller emits JSON)
   if (!isTTY()) return;
   const messages = getMessages(context);
   if (messages?.onEmpty) {
@@ -128,6 +133,7 @@ export function printAlreadyDone(
   context: MessageContext,
   variables?: MessageVariables
 ): void {
+  if (isJsonMode()) return; // suppress in JSON mode
   if (!isTTY()) return;
   const messages = getMessages(context);
   if (messages?.onAlreadyDone) {
@@ -143,6 +149,7 @@ export function printHint(
   context: MessageContext,
   variables?: MessageVariables
 ): void {
+  if (isJsonMode()) return; // suppress in JSON mode
   if (!isTTY()) return;
   const messages = getMessages(context);
   if (messages?.hint) {

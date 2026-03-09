@@ -25,6 +25,8 @@ import { get, put, list, head } from '@tigrisdata/storage';
 import { executeWithConcurrency } from '../utils/concurrency.js';
 import { calculateUploadParams } from '../utils/upload.js';
 import type { ParsedPath } from '../types.js';
+import { handleError } from '../utils/errors.js';
+import { isJsonMode, output } from '../utils/output.js';
 
 type CopyDirection = 'local-to-remote' | 'remote-to-local' | 'remote-to-remote';
 
@@ -33,10 +35,7 @@ function detectDirection(src: string, dest: string): CopyDirection {
   const destRemote = isRemotePath(dest);
 
   if (!srcRemote && !destRemote) {
-    console.error(
-      'At least one path must be a remote Tigris path (t3:// or tigris://)'
-    );
-    process.exit(1);
+    handleError({ message: 'At least one path must be a remote Tigris path (t3:// or tigris://)' });
   }
 
   if (srcRemote && destRemote) return 'remote-to-remote';
@@ -112,7 +111,7 @@ async function uploadFile(
 
   const { error: putError } = await put(key, body, {
     ...calculateUploadParams(fileSize),
-    onUploadProgress: showProgress
+    onUploadProgress: showProgress && !isJsonMode()
       ? ({ loaded }) => {
           if (fileSize !== undefined && fileSize > 0) {
             const pct = Math.round((loaded / fileSize) * 100);
@@ -245,7 +244,7 @@ async function copyObject(
 
   const { error: putError } = await put(destKey, data, {
     ...calculateUploadParams(fileSize),
-    onUploadProgress: showProgress
+    onUploadProgress: showProgress && !isJsonMode()
       ? ({ loaded }) => {
           if (fileSize !== undefined && fileSize > 0) {
             const pct = Math.round((loaded / fileSize) * 100);
@@ -300,16 +299,16 @@ async function copyLocalToRemote(
 
       const result = await uploadFile(file, destParsed.bucket, destKey, config);
       if (result.error) {
-        console.error(`Failed to upload ${file}: ${result.error}`);
+        if (!isJsonMode()) console.error(`Failed to upload ${file}: ${result.error}`);
         return false;
       } else {
-        console.log(`Uploaded ${file} -> t3://${destParsed.bucket}/${destKey}`);
+        if (!isJsonMode()) console.log(`Uploaded ${file} -> t3://${destParsed.bucket}/${destKey}`);
         return true;
       }
     });
     const results = await executeWithConcurrency(tasks, 8);
     const copied = results.filter(Boolean).length;
-    console.log(`Uploaded ${copied} file(s)`);
+    if (!isJsonMode()) output(`Uploaded  file(s)`, { copied, action: 'uploaded' });
     return;
   }
 
@@ -317,16 +316,12 @@ async function copyLocalToRemote(
   try {
     stats = statSync(localPath);
   } catch {
-    console.error(`Source not found: ${src}`);
-    process.exit(1);
+    handleError({ message: `Source not found: ${src}` });
   }
 
   if (stats.isDirectory()) {
     if (!recursive) {
-      console.error(
-        `${src} is a directory (not copied). Use -r to copy recursively.`
-      );
-      process.exit(1);
+      handleError({ message: `${src} is a directory (not copied). Use -r to copy recursively.` });
     }
 
     const files = listLocalFiles(localPath);
@@ -349,16 +344,16 @@ async function copyLocalToRemote(
 
       const result = await uploadFile(file, destParsed.bucket, destKey, config);
       if (result.error) {
-        console.error(`Failed to upload ${file}: ${result.error}`);
+        if (!isJsonMode()) console.error(`Failed to upload ${file}: ${result.error}`);
         return false;
       } else {
-        console.log(`Uploaded ${file} -> t3://${destParsed.bucket}/${destKey}`);
+        if (!isJsonMode()) console.log(`Uploaded ${file} -> t3://${destParsed.bucket}/${destKey}`);
         return true;
       }
     });
     const dirResults = await executeWithConcurrency(dirTasks, 8);
     const copied = dirResults.filter(Boolean).length;
-    console.log(`Uploaded ${copied} file(s)`);
+    if (!isJsonMode()) output(`Uploaded  file(s)`, { copied, action: 'uploaded' });
   } else {
     // Single file
     const fileName = basename(localPath);
@@ -390,10 +385,9 @@ async function copyLocalToRemote(
       true
     );
     if (result.error) {
-      console.error(result.error);
-      process.exit(1);
+      handleError({ message: result.error! });
     }
-    console.log(`Uploaded ${src} -> t3://${destParsed.bucket}/${destKey}`);
+    if (!isJsonMode()) console.log(`Uploaded ${src} -> t3://${destParsed.bucket}/${destKey}`);
   }
 }
 
@@ -409,8 +403,7 @@ async function copyRemoteToLocal(
   // t3://bucket/ (no path, trailing slash) = copy all contents from bucket root
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcParsed.path && !rawEndsWithSlash) {
-    console.error('Cannot copy a bucket. Provide a path within the bucket.');
-    process.exit(1);
+    handleError({ message: 'Cannot copy a bucket. Provide a path within the bucket.' });
   }
 
   const localDest = resolveLocalPath(dest);
@@ -423,10 +416,7 @@ async function copyRemoteToLocal(
   }
 
   if (isFolder && !isWildcard && !recursive) {
-    console.error(
-      `Source is a remote folder (not copied). Use -r to copy recursively.`
-    );
-    process.exit(1);
+    handleError({ message: 'Source is a remote folder (not copied). Use -r to copy recursively.' });
   }
 
   if (isWildcard || isFolder) {
@@ -451,8 +441,7 @@ async function copyRemoteToLocal(
     );
 
     if (error) {
-      console.error(error.message);
-      process.exit(1);
+      handleError(error);
     }
 
     let filesToDownload = items.filter((item) => !item.name.endsWith('/'));
@@ -485,7 +474,7 @@ async function copyRemoteToLocal(
         config
       );
       if (result.error) {
-        console.error(`Failed to download ${item.name}: ${result.error}`);
+        if (!isJsonMode()) console.error(`Failed to download ${item.name}: ${result.error}`);
         return false;
       } else {
         console.log(
@@ -496,7 +485,7 @@ async function copyRemoteToLocal(
     });
     const downloadResults = await executeWithConcurrency(downloadTasks, 8);
     const downloaded = downloadResults.filter(Boolean).length;
-    console.log(`Downloaded ${downloaded} file(s)`);
+    if (!isJsonMode()) output(`Downloaded  file(s)`, { downloaded, action: 'downloaded' });
   } else {
     // Single object
     const srcFileName = srcParsed.path.split('/').pop()!;
@@ -524,8 +513,7 @@ async function copyRemoteToLocal(
       true
     );
     if (result.error) {
-      console.error(result.error);
-      process.exit(1);
+      handleError({ message: result.error! });
     }
     console.log(
       `Downloaded t3://${srcParsed.bucket}/${srcParsed.path} -> ${localFilePath}`
@@ -545,8 +533,7 @@ async function copyRemoteToRemote(
   // t3://bucket/ (no path, trailing slash) = copy all contents from bucket root
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcParsed.path && !rawEndsWithSlash) {
-    console.error('Cannot copy a bucket. Provide a path within the bucket.');
-    process.exit(1);
+    handleError({ message: 'Cannot copy a bucket. Provide a path within the bucket.' });
   }
 
   const isWildcard = src.includes('*');
@@ -558,10 +545,7 @@ async function copyRemoteToRemote(
   }
 
   if (isFolder && !isWildcard && !recursive) {
-    console.error(
-      `Source is a remote folder (not copied). Use -r to copy recursively.`
-    );
-    process.exit(1);
+    handleError({ message: 'Source is a remote folder (not copied). Use -r to copy recursively.' });
   }
 
   if (isWildcard || isFolder) {
@@ -591,8 +575,7 @@ async function copyRemoteToRemote(
       srcParsed.bucket === destParsed.bucket &&
       prefix === effectiveDestPrefixWithSlash
     ) {
-      console.error('Source and destination are the same');
-      process.exit(1);
+      handleError({ message: 'Source and destination are the same' });
     }
 
     const { items, error } = await listAllItems(
@@ -602,8 +585,7 @@ async function copyRemoteToRemote(
     );
 
     if (error) {
-      console.error(error.message);
-      process.exit(1);
+      handleError(error);
     }
 
     let itemsToCopy = items.filter((item) => item.name !== prefix);
@@ -633,7 +615,7 @@ async function copyRemoteToRemote(
       );
 
       if (copyResult.error) {
-        console.error(`Failed to copy ${item.name}: ${copyResult.error}`);
+        if (!isJsonMode()) console.error(`Failed to copy ${item.name}: ${copyResult.error}`);
         return false;
       } else {
         console.log(
@@ -667,7 +649,7 @@ async function copyRemoteToRemote(
           destFolderMarker
         );
         if (markerResult.error) {
-          console.error(`Failed to copy folder marker: ${markerResult.error}`);
+          if (!isJsonMode()) if (!isJsonMode()) console.error(`Failed to copy folder marker: ${markerResult.error}`);
         } else {
           copiedMarker = true;
         }
@@ -683,7 +665,7 @@ async function copyRemoteToRemote(
       return;
     }
 
-    console.log(`Copied ${copied} object(s)`);
+    if (!isJsonMode()) output(`Copied  object(s)`, { copied, action: 'copied' });
   } else {
     // Single object
     const srcFileName = srcParsed.path.split('/').pop()!;
@@ -707,8 +689,7 @@ async function copyRemoteToRemote(
     }
 
     if (srcParsed.bucket === destParsed.bucket && srcParsed.path === destKey) {
-      console.error('Source and destination are the same');
-      process.exit(1);
+      handleError({ message: 'Source and destination are the same' });
     }
 
     const result = await copyObject(
@@ -721,8 +702,7 @@ async function copyRemoteToRemote(
     );
 
     if (result.error) {
-      console.error(result.error);
-      process.exit(1);
+      handleError({ message: result.error! });
     }
 
     console.log(
@@ -736,8 +716,7 @@ export default async function cp(options: Record<string, unknown>) {
   const dest = getOption<string>(options, ['dest']);
 
   if (!src || !dest) {
-    console.error('Both src and dest arguments are required');
-    process.exit(1);
+    handleError({ message: 'Both src and dest arguments are required' });
   }
 
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
@@ -748,8 +727,7 @@ export default async function cp(options: Record<string, unknown>) {
     case 'local-to-remote': {
       const destParsed = parseRemotePath(dest);
       if (!destParsed.bucket) {
-        console.error('Invalid destination path');
-        process.exit(1);
+        handleError({ message: 'Invalid destination path' });
       }
       await copyLocalToRemote(src, destParsed, config, recursive);
       break;
@@ -757,8 +735,7 @@ export default async function cp(options: Record<string, unknown>) {
     case 'remote-to-local': {
       const srcParsed = parseRemotePath(src);
       if (!srcParsed.bucket) {
-        console.error('Invalid source path');
-        process.exit(1);
+        handleError({ message: 'Invalid source path' });
       }
       await copyRemoteToLocal(src, srcParsed, dest, config, recursive);
       break;
@@ -767,17 +744,15 @@ export default async function cp(options: Record<string, unknown>) {
       const srcParsed = parseRemotePath(src);
       const destParsed = parseRemotePath(dest);
       if (!srcParsed.bucket) {
-        console.error('Invalid source path');
-        process.exit(1);
+        handleError({ message: 'Invalid source path' });
       }
       if (!destParsed.bucket) {
-        console.error('Invalid destination path');
-        process.exit(1);
+        handleError({ message: 'Invalid destination path' });
       }
       await copyRemoteToRemote(src, srcParsed, destParsed, config, recursive);
       break;
     }
   }
 
-  process.exit(0);
+  
 }

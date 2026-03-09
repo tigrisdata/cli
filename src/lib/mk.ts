@@ -3,20 +3,20 @@ import { getOption } from '../utils/options.js';
 import { getStorageConfig } from '../auth/s3-client.js';
 import { createBucket, put, type StorageClass } from '@tigrisdata/storage';
 import { parseLocations } from '../utils/locations.js';
+import { output } from '../utils/output.js';
+import { handleError } from '../utils/errors.js';
 
 export default async function mk(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);
 
   if (!pathString) {
-    console.error('path argument is required');
-    process.exit(1);
+    handleError({ message: 'path argument is required' });
   }
 
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    console.error('Invalid path');
-    process.exit(1);
+    handleError({ message: 'Invalid path' });
   }
 
   const config = await getStorageConfig();
@@ -71,12 +71,11 @@ export default async function mk(options: Record<string, unknown>) {
     });
 
     if (error) {
-      console.error(error.message);
-      process.exit(1);
+      handleError(error);
     }
 
-    console.log(`Bucket '${bucket}' created`);
-    process.exit(0);
+    output(`Bucket '${bucket}' created`, { name: bucket, action: 'created', type: 'bucket' });
+    return;
   } else {
     // Create a "folder" (empty object with trailing slash)
     const folderPath = path.endsWith('/') ? path : `${path}/`;
@@ -89,11 +88,9 @@ export default async function mk(options: Record<string, unknown>) {
     });
 
     if (error) {
-      console.error(error.message);
-      process.exit(1);
+      handleError(error);
     }
 
-    console.log(`Folder '${bucket}/${folderPath}' created`);
-    process.exit(0);
+    output(`Folder '${bucket}/${folderPath}' created`, { bucket, path: folderPath, action: 'created', type: 'folder' });
   }
 }

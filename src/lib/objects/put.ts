@@ -7,9 +7,10 @@ import { put } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 import { calculateUploadParams } from '../../utils/upload.js';
 
 const context = msg('objects', 'put');
@@ -30,21 +31,18 @@ export default async function putObject(options: Record<string, unknown>) {
   const format = getOption<string>(options, ['format', 'f', 'F'], 'table');
 
   if (!bucket) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   if (!key) {
-    printFailure(context, 'Object key is required');
-    process.exit(1);
+    handleError({ message: 'Object key is required' });
   }
 
   // Check for stdin or file input
   const hasStdin = !process.stdin.isTTY;
 
   if (!file && !hasStdin) {
-    printFailure(context, 'File path is required (or pipe data via stdin)');
-    process.exit(1);
+    handleError({ message: 'File path is required (or pipe data via stdin)' });
   }
 
   let body: ReadableStream;
@@ -56,8 +54,7 @@ export default async function putObject(options: Record<string, unknown>) {
       const stats = statSync(file);
       fileSize = stats.size;
     } catch {
-      printFailure(context, `File not found: ${file}`);
-      process.exit(1);
+      handleError({ message: `File not found: ${file}` });
     }
     const fileStream = createReadStream(file);
     body = Readable.toWeb(fileStream) as ReadableStream;
@@ -77,7 +74,7 @@ export default async function putObject(options: Record<string, unknown>) {
     access: access === 'public' ? 'public' : 'private',
     contentType,
     ...uploadParams,
-    onUploadProgress: ({ loaded, percentage }) => {
+    onUploadProgress: isJsonMode() ? undefined : ({ loaded, percentage }) => {
       if (fileSize !== undefined && fileSize > 0) {
         process.stdout.write(
           `\rUploading: ${formatSize(loaded)} / ${formatSize(fileSize)} (${percentage}%)`
@@ -93,11 +90,24 @@ export default async function putObject(options: Record<string, unknown>) {
   });
 
   // Clear the progress line
-  process.stdout.write('\r' + ' '.repeat(60) + '\r');
+  if (!isJsonMode()) {
+    process.stdout.write('\r' + ' '.repeat(60) + '\r');
+  }
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
+  }
+
+  if (isJsonMode()) {
+    jsonSuccess({
+      key,
+      bucket,
+      path: data.path,
+      size: data.size ?? fileSize ?? 0,
+      contentType: data.contentType || undefined,
+      modified: data.modified,
+    });
+    return;
   }
 
   const result = [

@@ -5,10 +5,11 @@ import { listBucketSnapshots } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('snapshots', 'list');
 
@@ -19,8 +20,7 @@ export default async function list(options: Record<string, unknown>) {
   const format = getOption<string>(options, ['format', 'f', 'F'], 'table');
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   const config = await getStorageConfig();
@@ -28,11 +28,14 @@ export default async function list(options: Record<string, unknown>) {
   const { data, error } = await listBucketSnapshots(name, { config });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   if (!data || data.length === 0) {
+    if (isJsonMode()) {
+      jsonSuccess({ bucket: name, snapshots: [] });
+      return;
+    }
     printEmpty(context);
     return;
   }
@@ -42,6 +45,11 @@ export default async function list(options: Record<string, unknown>) {
     version: snapshot.version || '',
     created: snapshot.creationDate,
   }));
+
+  if (isJsonMode()) {
+    jsonSuccess({ bucket: name, snapshots });
+    return;
+  }
 
   const output = formatOutput(snapshots, format!, 'snapshots', 'snapshot', [
     { key: 'name', header: 'Name' },

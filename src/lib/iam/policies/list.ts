@@ -8,10 +8,11 @@ import { listPolicies } from '@tigrisdata/iam';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../../utils/messages.js';
+import { handleError } from '../../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../../utils/output.js';
 
 const context = msg('iam policies', 'list');
 
@@ -23,19 +24,14 @@ export default async function list(options: Record<string, unknown>) {
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Policies can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'Policies can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const authClient = getAuthClient();
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -51,11 +47,14 @@ export default async function list(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   if (!data.policies || data.policies.length === 0) {
+    if (isJsonMode()) {
+      jsonSuccess({ policies: [] });
+      return;
+    }
     printEmpty(context);
     return;
   }
@@ -69,6 +68,11 @@ export default async function list(options: Record<string, unknown>) {
     created: policy.createDate,
     updated: policy.updateDate,
   }));
+
+  if (isJsonMode()) {
+    jsonSuccess({ policies });
+    return;
+  }
 
   const output = formatOutput(policies, format!, 'policies', 'policy', [
     { key: 'id', header: 'ID' },

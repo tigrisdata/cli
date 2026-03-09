@@ -8,6 +8,8 @@ import {
   printHint,
   msg,
 } from '../../utils/messages.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
+import { handleError } from '../../utils/errors.js';
 
 const context = msg('login', 'oauth');
 
@@ -37,17 +39,24 @@ export async function oauth(): Promise<void> {
     if (orgs.length > 0) {
       const firstOrg = orgs[0];
       await storeSelectedOrganization(firstOrg.id);
-      printSuccess(context, { org: firstOrg.displayName || firstOrg.name });
 
-      if (orgs.length > 1) {
-        printHint(context, { count: orgs.length });
+      if (isJsonMode()) {
+        jsonSuccess({ action: 'login', method: 'oauth', organization: firstOrg.displayName || firstOrg.name, organizationCount: orgs.length });
+      } else {
+        printSuccess(context, { org: firstOrg.displayName || firstOrg.name });
+        if (orgs.length > 1) {
+          printHint(context, { count: orgs.length });
+        }
       }
     } else {
-      printSuccess(context, { org: 'none' });
+      if (isJsonMode()) {
+        jsonSuccess({ action: 'login', method: 'oauth' });
+      } else {
+        printSuccess(context, { org: 'none' });
+      }
     }
   } catch {
-    printFailure(context);
-    process.exit(1);
+    handleError({ message: 'Authentication failed' });
   }
 }
 

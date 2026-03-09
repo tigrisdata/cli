@@ -3,9 +3,10 @@ import { getOption } from '../../utils/options.js';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 import { updateObject } from '@tigrisdata/storage';
 
 const context = msg('objects', 'set');
@@ -19,18 +20,15 @@ export default async function setObject(options: Record<string, unknown>) {
   const newKey = getOption<string>(options, ['new-key', 'n', 'newKey']);
 
   if (!bucket) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   if (!key) {
-    printFailure(context, 'Object key is required');
-    process.exit(1);
+    handleError({ message: 'Object key is required' });
   }
 
   if (!access) {
-    printFailure(context, 'Access level is required (--access public|private)');
-    process.exit(1);
+    handleError({ message: 'Access level is required (--access public|private)' });
   }
 
   const config = await getStorageConfig();
@@ -45,9 +43,12 @@ export default async function setObject(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ key, bucket, access, ...(newKey && { newKey }) });
+    return;
+  }
   printSuccess(context, { key, bucket });
 }

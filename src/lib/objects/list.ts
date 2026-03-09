@@ -5,10 +5,11 @@ import { list } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('objects', 'list');
 
@@ -20,8 +21,7 @@ export default async function listObjects(options: Record<string, unknown>) {
   const format = getOption<string>(options, ['format', 'f', 'F'], 'table');
 
   if (!bucket) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   const config = await getStorageConfig();
@@ -35,11 +35,14 @@ export default async function listObjects(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   if (!data.items || data.items.length === 0) {
+    if (isJsonMode()) {
+      jsonSuccess({ bucket, objects: [] });
+      return;
+    }
     printEmpty(context);
     return;
   }
@@ -49,6 +52,11 @@ export default async function listObjects(options: Record<string, unknown>) {
     size: formatSize(item.size),
     modified: item.lastModified,
   }));
+
+  if (isJsonMode()) {
+    jsonSuccess({ bucket, objects });
+    return;
+  }
 
   const output = formatOutput(objects, format!, 'objects', 'object', [
     { key: 'key', header: 'Key' },

@@ -14,10 +14,11 @@ import { listUsers } from '@tigrisdata/iam';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../../utils/messages.js';
+import { handleError } from '../../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../../utils/output.js';
 
 const context = msg('iam users', 'list');
 
@@ -29,11 +30,7 @@ export default async function list(options: Record<string, unknown>) {
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Users can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'Users can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const selectedOrg = getSelectedOrganization();
@@ -51,8 +48,7 @@ export default async function list(options: Record<string, unknown>) {
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -68,8 +64,7 @@ export default async function list(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
   const users = data.users.map((user) => ({
@@ -88,7 +83,16 @@ export default async function list(options: Record<string, unknown>) {
   }));
 
   if (users.length === 0 && invitations.length === 0) {
+    if (isJsonMode()) {
+      jsonSuccess({ users: [], invitations: [] });
+      return;
+    }
     printEmpty(context);
+    return;
+  }
+
+  if (isJsonMode()) {
+    jsonSuccess({ users, invitations });
     return;
   }
 

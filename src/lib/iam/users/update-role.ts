@@ -10,10 +10,11 @@ import { updateUserRole, listUsers } from '@tigrisdata/iam';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
+    printEmpty,
   msg,
 } from '../../../utils/messages.js';
+import { handleError } from '../../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../../utils/output.js';
 
 const context = msg('iam users', 'update-role');
 
@@ -23,11 +24,7 @@ export default async function updateRole(options: Record<string, unknown>) {
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'User roles can only be updated when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'User roles can only be updated when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const selectedOrg = getSelectedOrganization();
@@ -47,22 +44,14 @@ export default async function updateRole(options: Record<string, unknown>) {
   const roleOption = getOption<string | string[]>(options, ['role', 'r']);
 
   if (!roleOption) {
-    printFailure(
-      context,
-      'Role is required. Use --role admin or --role member'
-    );
-    process.exit(1);
+    handleError({ message: 'Role is required. Use --role admin or --role member' });
   }
 
   const roles = Array.isArray(roleOption) ? roleOption : [roleOption];
 
   for (const r of roles) {
     if (!validRoles.includes(r as Role)) {
-      printFailure(
-        context,
-        `Invalid role "${r}". Must be one of: ${validRoles.join(', ')}`
-      );
-      process.exit(1);
+      handleError({ message: `Invalid role "${r}". Must be one of: ${validRoles.join(', ')}` });
     }
   }
 
@@ -78,8 +67,7 @@ export default async function updateRole(options: Record<string, unknown>) {
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -99,8 +87,7 @@ export default async function updateRole(options: Record<string, unknown>) {
     });
 
     if (listError) {
-      printFailure(context, listError.message);
-      process.exit(1);
+      handleError(listError);
     }
 
     if (listData.users.length === 0) {
@@ -123,11 +110,7 @@ export default async function updateRole(options: Record<string, unknown>) {
 
   // Pair roles with users: if one role given, apply to all; otherwise pair 1:1
   if (roles.length > 1 && roles.length !== resources.length) {
-    printFailure(
-      context,
-      `Number of roles (${roles.length}) must match number of users (${resources.length}), or provide a single role for all users`
-    );
-    process.exit(1);
+    handleError({ message: `Number of roles (${roles.length}) must match number of users (${resources.length}), or provide a single role for all users` });
   }
 
   const roleUpdates = resources.map((userId, i) => ({
@@ -140,9 +123,12 @@ export default async function updateRole(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ updated: roleUpdates });
+    return;
+  }
   printSuccess(context);
 }

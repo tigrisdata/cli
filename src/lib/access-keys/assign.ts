@@ -7,9 +7,10 @@ import { assignBucketRoles, revokeAllBucketRoles } from '@tigrisdata/iam';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('access-keys', 'assign');
 
@@ -38,31 +39,24 @@ export default async function assign(options: Record<string, unknown>) {
   );
 
   if (!id) {
-    printFailure(context, 'Access key ID is required');
-    process.exit(1);
+    handleError({ message: 'Access key ID is required' });
   }
 
   if (admin && revokeRoles) {
-    printFailure(context, 'Cannot use --admin and --revoke-roles together');
-    process.exit(1);
+    handleError({ message: 'Cannot use --admin and --revoke-roles together' });
   }
 
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Bucket roles can only be managed when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'Bucket roles can only be managed when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const authClient = getAuthClient();
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -79,10 +73,13 @@ export default async function assign(options: Record<string, unknown>) {
     const { error } = await revokeAllBucketRoles(id, { config });
 
     if (error) {
-      printFailure(context, error.message);
-      process.exit(1);
+      handleError(error);
     }
 
+    if (isJsonMode()) {
+      jsonSuccess({ id, action: 'revoke_all' });
+      return;
+    }
     printSuccess(context);
     return;
   }
@@ -94,29 +91,17 @@ export default async function assign(options: Record<string, unknown>) {
     assignments = [{ bucket: '*', role: 'NamespaceAdmin' }];
   } else {
     if (buckets.length === 0) {
-      printFailure(
-        context,
-        'At least one bucket name is required (or use --admin or --revoke-roles)'
-      );
-      process.exit(1);
+      handleError({ message: 'At least one bucket name is required (or use --admin or --revoke-roles)' });
     }
 
     if (roles.length === 0) {
-      printFailure(
-        context,
-        'At least one role is required (or use --admin or --revoke-roles)'
-      );
-      process.exit(1);
+      handleError({ message: 'At least one role is required (or use --admin or --revoke-roles)' });
     }
 
     // Validate all roles
     for (const role of roles) {
       if (!validRoles.includes(role as Role)) {
-        printFailure(
-          context,
-          `Invalid role "${role}". Valid roles are: ${validRoles.join(', ')}`
-        );
-        process.exit(1);
+        handleError({ message: `Invalid role "${role}". Valid roles are: ${validRoles.join(', ')}` });
       }
     }
 
@@ -134,20 +119,19 @@ export default async function assign(options: Record<string, unknown>) {
         role: roles[i] as Role,
       }));
     } else {
-      printFailure(
-        context,
-        `Number of roles (${roles.length}) must be 1 or match number of buckets (${buckets.length})`
-      );
-      process.exit(1);
+      handleError({ message: `Number of roles (${roles.length}) must be 1 or match number of buckets (${buckets.length})` });
     }
   }
 
   const { error } = await assignBucketRoles(id, assignments, { config });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
   }
 
+  if (isJsonMode()) {
+    jsonSuccess({ id, assignments });
+    return;
+  }
   printSuccess(context);
 }

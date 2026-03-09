@@ -45,6 +45,12 @@ export interface Specs {
   commands: CommandSpec[];
 }
 
+export interface GlobalOptions {
+  json?: boolean;
+  yes?: boolean;
+  dryRun?: boolean;
+}
+
 export interface ParsedPath {
   bucket: string;
   path: string;

@@ -7,9 +7,10 @@ import { getAccessKey } from '@tigrisdata/iam';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('access-keys', 'get');
 
@@ -19,26 +20,20 @@ export default async function get(options: Record<string, unknown>) {
   const id = getOption<string>(options, ['id']);
 
   if (!id) {
-    printFailure(context, 'Access key ID is required');
-    process.exit(1);
+    handleError({ message: 'Access key ID is required' });
   }
 
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Access keys can only be retrieved when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'Access keys can only be retrieved when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const authClient = getAuthClient();
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -54,8 +49,12 @@ export default async function get(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
+  }
+
+  if (isJsonMode()) {
+    jsonSuccess(data);
+    return;
   }
 
   console.log(`  Name: ${data.name}`);

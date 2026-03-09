@@ -4,6 +4,8 @@
 
 import { Command as CommanderCommand } from 'commander';
 import type { Argument, CommandSpec, Specs } from './types.js';
+import { isJsonMode, setJsonMode, jsonError } from './utils/output.js';
+import { classifyError } from './utils/errors.js';
 
 export interface ModuleLoader {
   (commandPath: string[]): Promise<{
@@ -29,19 +31,32 @@ export interface CLIConfig {
 export function setupErrorHandlers() {
   process.on('unhandledRejection', (reason) => {
     if (reason === '' || reason === undefined) {
-      console.error('\nOperation cancelled');
+      if (isJsonMode()) {
+        jsonError('cancelled', 'Operation cancelled');
+      } else {
+        console.error('\nOperation cancelled');
+      }
       process.exit(1);
     }
-    console.error(
-      '\nError:',
-      reason instanceof Error ? reason.message : reason
-    );
-    process.exit(1);
+    const message =
+      reason instanceof Error ? reason.message : String(reason);
+    const classified = classifyError({ message });
+    if (isJsonMode()) {
+      jsonError(classified.error_code, message, classified.suggested_action);
+    } else {
+      console.error('\nError:', message);
+    }
+    process.exit(classified.exitCode);
   });
 
   process.on('uncaughtException', (error) => {
-    console.error('\nError:', error.message);
-    process.exit(1);
+    const classified = classifyError(error);
+    if (isJsonMode()) {
+      jsonError(classified.error_code, error.message, classified.suggested_action);
+    } else {
+      console.error('\nError:', error.message);
+    }
+    process.exit(classified.exitCode);
   });
 }
 
@@ -363,10 +378,19 @@ async function loadAndExecuteCommand(
   positionalArgs: string[] = [],
   options: Record<string, unknown> = {}
 ) {
+  // Set global JSON mode if --json flag is present
+  if (options.json) {
+    setJsonMode(true);
+  }
+
   const { module, error: loadError } = await loadModule(pathParts);
 
   if (loadError || !module) {
-    console.error(loadError);
+    if (isJsonMode()) {
+      jsonError('command_not_found', loadError || 'Command not found');
+    } else {
+      console.error(loadError);
+    }
     process.exit(1);
   }
 
@@ -501,6 +525,12 @@ export function createProgram(config: CLIConfig): CommanderCommand {
 
   const program = new CommanderCommand();
   program.name(specs.name).description(specs.description).version(version);
+
+  // Global flags for AI agent usage
+  program
+    .option('--json', 'Output structured JSON to stdout, messages to stderr')
+    .option('-y, --yes', 'Auto-confirm destructive operations (non-interactive mode)')
+    .option('--dry-run', 'Preview what would change without making modifications');
 
   registerCommands(config, program, specs.commands);
 

@@ -5,9 +5,10 @@ import { getBucketInfo } from '@tigrisdata/storage';
 import {
   printStart,
   printSuccess,
-  printFailure,
   msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('buckets', 'get');
 
@@ -17,8 +18,7 @@ export default async function get(options: Record<string, unknown>) {
   const name = getOption<string>(options, ['name']);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    process.exit(1);
+    handleError({ message: 'Bucket name is required' });
   }
 
   const { data, error } = await getBucketInfo(name, {
@@ -26,8 +26,12 @@ export default async function get(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
+  }
+
+  if (isJsonMode()) {
+    jsonSuccess({ name, ...data });
+    return;
   }
 
   const info = [

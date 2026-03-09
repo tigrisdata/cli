@@ -7,9 +7,10 @@ import { createAccessKey } from '@tigrisdata/iam';
 import {
   printStart,
   printSuccess,
-  printFailure,
-  msg,
+    msg,
 } from '../../utils/messages.js';
+import { handleError } from '../../utils/errors.js';
+import { isJsonMode, jsonSuccess } from '../../utils/output.js';
 
 const context = msg('access-keys', 'create');
 
@@ -19,26 +20,20 @@ export default async function create(options: Record<string, unknown>) {
   const name = getOption<string>(options, ['name']);
 
   if (!name) {
-    printFailure(context, 'Access key name is required');
-    process.exit(1);
+    handleError({ message: 'Access key name is required' });
   }
 
   const loginMethod = await getLoginMethod();
 
   if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Access keys can only be created when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    process.exit(1);
+    handleError({ message: 'Access keys can only be created when logged in via OAuth.\nRun "tigris login oauth" first.' });
   }
 
   const authClient = getAuthClient();
   const isAuthenticated = await authClient.isAuthenticated();
 
   if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    process.exit(1);
+    handleError({ message: 'Not authenticated. Run "tigris login oauth" first.' });
   }
 
   const accessToken = await authClient.getAccessToken();
@@ -54,8 +49,12 @@ export default async function create(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    process.exit(1);
+    handleError(error);
+  }
+
+  if (isJsonMode()) {
+    jsonSuccess({ name: data.name, id: data.id, secret: data.secret });
+    return;
   }
 
   console.log(`  Name: ${data.name}`);
