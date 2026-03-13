@@ -16,6 +16,11 @@ const context = msg('access-keys', 'delete');
 export default async function remove(options: Record<string, unknown>) {
   printStart(context);
 
+  const json = getOption<boolean>(options, ['json']);
+  const format = json
+    ? 'json'
+    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+
   const id = getOption<string>(options, ['id']);
 
   if (!id) {
@@ -56,6 +61,10 @@ export default async function remove(options: Record<string, unknown>) {
   if (error) {
     printFailure(context, error.message);
     process.exit(1);
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'deleted', id }));
   }
 
   printSuccess(context);

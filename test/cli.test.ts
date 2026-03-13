@@ -1742,7 +1742,13 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
     });
 
     it('should list forks', () => {
-      const result = runCli(`forks list ${snapBucket}`);
+      // Retry — fork visibility is eventually consistent
+      let result = { stdout: '', stderr: '', exitCode: 1 };
+      for (let i = 0; i < 3; i++) {
+        result = runCli(`forks list ${snapBucket}`);
+        if (result.exitCode === 0 && result.stdout.includes(forkBucket)) break;
+        if (i < 2) execSync('sleep 5');
+      }
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain(forkBucket);
     }, 120_000);
@@ -1759,9 +1765,13 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
     }, 120_000);
 
     it('should list forks via buckets list --forks-of', () => {
-      const result = runCli(
-        `buckets list --forks-of ${snapBucket}`
-      );
+      // Retry — fork visibility is eventually consistent
+      let result = { stdout: '', stderr: '', exitCode: 1 };
+      for (let i = 0; i < 3; i++) {
+        result = runCli(`buckets list --forks-of ${snapBucket}`);
+        if (result.exitCode === 0 && result.stdout.includes(forkBucket)) break;
+        if (i < 2) execSync('sleep 5');
+      }
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain(forkBucket);
     }, 120_000);

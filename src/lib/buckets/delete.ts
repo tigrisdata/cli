@@ -13,6 +13,11 @@ const context = msg('buckets', 'delete');
 export default async function deleteBucket(options: Record<string, unknown>) {
   printStart(context);
 
+  const json = getOption<boolean>(options, ['json']);
+  const format = json
+    ? 'json'
+    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+
   const names = getOption<string | string[]>(options, ['name']);
 
   if (!names) {
@@ -23,6 +28,7 @@ export default async function deleteBucket(options: Record<string, unknown>) {
   const bucketNames = Array.isArray(names) ? names : [names];
   const config = await getStorageConfig();
 
+  const results: string[] = [];
   for (const name of bucketNames) {
     const { error } = await removeBucket(name, { config });
 
@@ -31,6 +37,11 @@ export default async function deleteBucket(options: Record<string, unknown>) {
       process.exit(1);
     }
 
+    results.push(name);
     printSuccess(context, { name });
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'deleted', names: results }));
   }
 }

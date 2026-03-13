@@ -10,8 +10,11 @@ import {
 import { getOption } from '../utils/options.js';
 import { getStorageConfig } from '../auth/s3-client.js';
 import { formatSize } from '../utils/format.js';
+import { requireInteractive } from '../utils/interactive.js';
 import { get, put, remove, list, head } from '@tigrisdata/storage';
 import { calculateUploadParams } from '../utils/upload.js';
+
+let _jsonMode = false;
 
 async function confirm(message: string): Promise<boolean> {
   const rl = readline.createInterface({
@@ -32,6 +35,11 @@ export default async function mv(options: Record<string, unknown>) {
   const dest = getOption<string>(options, ['dest']);
   const force = getOption<boolean>(options, ['force', 'f', 'F']);
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
+  const jsonFlag = getOption<boolean>(options, ['json']);
+  const format = jsonFlag
+    ? 'json'
+    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  _jsonMode = format === 'json';
 
   if (!src || !dest) {
     console.error('both src and dest arguments are required');
@@ -156,17 +164,22 @@ export default async function mv(options: Record<string, unknown>) {
       : false;
 
     if (itemsToMove.length === 0 && !hasFolderMarker) {
-      console.log('No objects to move');
+      if (_jsonMode) {
+        console.log(JSON.stringify({ action: 'moved', count: 0 }));
+      } else {
+        console.log('No objects to move');
+      }
       return;
     }
 
     const totalToMove = itemsToMove.length + (hasFolderMarker ? 1 : 0);
     if (!force) {
+      requireInteractive('Use --force to skip confirmation');
       const confirmed = await confirm(
         `Are you sure you want to move ${totalToMove} object(s)?`
       );
       if (!confirmed) {
-        console.log('Aborted');
+        if (!_jsonMode) console.log('Aborted');
         return;
       }
     }
@@ -189,9 +202,10 @@ export default async function mv(options: Record<string, unknown>) {
       if (moveResult.error) {
         console.error(`Failed to move ${item.name}: ${moveResult.error}`);
       } else {
-        console.log(
-          `Moved t3://${srcPath.bucket}/${item.name} -> t3://${destPath.bucket}/${destKey}`
-        );
+        if (!_jsonMode)
+          console.log(
+            `Moved t3://${srcPath.bucket}/${item.name} -> t3://${destPath.bucket}/${destKey}`
+          );
         moved++;
       }
     }
@@ -237,7 +251,11 @@ export default async function mv(options: Record<string, unknown>) {
       moved = 1;
     }
 
-    console.log(`Moved ${moved} object(s)`);
+    if (_jsonMode) {
+      console.log(JSON.stringify({ action: 'moved', count: moved }));
+    } else {
+      console.log(`Moved ${moved} object(s)`);
+    }
   } else {
     // Move single object
     const srcFileName = srcPath.path.split('/').pop()!;
@@ -270,11 +288,12 @@ export default async function mv(options: Record<string, unknown>) {
     }
 
     if (!force) {
+      requireInteractive('Use --force to skip confirmation');
       const confirmed = await confirm(
         `Are you sure you want to move 't3://${srcPath.bucket}/${srcPath.path}'?`
       );
       if (!confirmed) {
-        console.log('Aborted');
+        if (!_jsonMode) console.log('Aborted');
         return;
       }
     }
@@ -293,9 +312,20 @@ export default async function mv(options: Record<string, unknown>) {
       process.exit(1);
     }
 
-    console.log(
-      `Moved t3://${srcPath.bucket}/${srcPath.path} -> t3://${destPath.bucket}/${destKey}`
-    );
+    if (_jsonMode) {
+      console.log(
+        JSON.stringify({
+          action: 'moved',
+          count: 1,
+          src: `t3://${srcPath.bucket}/${srcPath.path}`,
+          dest: `t3://${destPath.bucket}/${destKey}`,
+        })
+      );
+    } else {
+      console.log(
+        `Moved t3://${srcPath.bucket}/${srcPath.path} -> t3://${destPath.bucket}/${destKey}`
+      );
+    }
   }
   process.exit(0);
 }

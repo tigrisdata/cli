@@ -13,6 +13,11 @@ const context = msg('objects', 'delete');
 export default async function deleteObject(options: Record<string, unknown>) {
   printStart(context);
 
+  const json = getOption<boolean>(options, ['json']);
+  const format = json
+    ? 'json'
+    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+
   const bucket = getOption<string>(options, ['bucket']);
   const keys = getOption<string | string[]>(options, ['key']);
 
@@ -29,6 +34,7 @@ export default async function deleteObject(options: Record<string, unknown>) {
   const config = await getStorageConfig();
   const keyList = Array.isArray(keys) ? keys : [keys];
 
+  const deleted: string[] = [];
   for (const key of keyList) {
     const { error } = await remove(key, {
       config: {
@@ -42,6 +48,11 @@ export default async function deleteObject(options: Record<string, unknown>) {
       process.exit(1);
     }
 
+    deleted.push(key);
     printSuccess(context, { key });
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'deleted', bucket, keys: deleted }));
   }
 }
