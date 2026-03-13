@@ -31,7 +31,7 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:unit": "vitest run test/utils",
+    "test:unit": "vitest run test/utils test/cli-core.test.ts test/specs-completeness.test.ts",
     "test:integration": "vitest run test/cli.test.ts",
     "publint": "publint",
     "updatedocs": "tsx scripts/update-docs.ts",
