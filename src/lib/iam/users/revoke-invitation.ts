@@ -1,6 +1,6 @@
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { requireInteractive } from '../../../utils/interactive.js';
+import { requireInteractive, confirm } from '../../../utils/interactive.js';
 import { getOption } from '../../../utils/options.js';
 import { getLoginMethod } from '../../../auth/s3-client.js';
 import { getAuthClient } from '../../../auth/client.js';
@@ -24,6 +24,7 @@ export default async function revokeInvitation(
   printStart(context);
 
   const resourceOption = getOption<string | string[]>(options, ['resource']);
+  const force = getOption<boolean>(options, ['force']);
 
   const loginMethod = await getLoginMethod();
 
@@ -100,6 +101,17 @@ export default async function revokeInvitation(
     });
 
     resources = selected;
+  }
+
+  if (!force) {
+    requireInteractive('Use --force to skip confirmation');
+    const confirmed = await confirm(
+      `Revoke ${resources.length} invitation(s)?`
+    );
+    if (!confirmed) {
+      console.log('Aborted');
+      return;
+    }
   }
 
   const { error } = await revokeInv(resources, {

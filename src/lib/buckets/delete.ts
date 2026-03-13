@@ -7,6 +7,7 @@ import {
   printFailure,
   msg,
 } from '../../utils/messages.js';
+import { requireInteractive, confirm } from '../../utils/interactive.js';
 
 const context = msg('buckets', 'delete');
 
@@ -19,6 +20,7 @@ export default async function deleteBucket(options: Record<string, unknown>) {
     : getOption<string>(options, ['format', 'f', 'F'], 'table');
 
   const names = getOption<string | string[]>(options, ['name']);
+  const force = getOption<boolean>(options, ['force']);
 
   if (!names) {
     printFailure(context, 'Bucket name is required');
@@ -27,6 +29,15 @@ export default async function deleteBucket(options: Record<string, unknown>) {
 
   const bucketNames = Array.isArray(names) ? names : [names];
   const config = await getStorageConfig();
+
+  if (!force) {
+    requireInteractive('Use --force to skip confirmation');
+    const confirmed = await confirm(`Delete ${bucketNames.length} bucket(s)?`);
+    if (!confirmed) {
+      console.log('Aborted');
+      return;
+    }
+  }
 
   const results: string[] = [];
   for (const name of bucketNames) {

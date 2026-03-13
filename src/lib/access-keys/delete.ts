@@ -10,6 +10,7 @@ import {
   printFailure,
   msg,
 } from '../../utils/messages.js';
+import { requireInteractive, confirm } from '../../utils/interactive.js';
 
 const context = msg('access-keys', 'delete');
 
@@ -22,6 +23,7 @@ export default async function remove(options: Record<string, unknown>) {
     : getOption<string>(options, ['format', 'f', 'F'], 'table');
 
   const id = getOption<string>(options, ['id']);
+  const force = getOption<boolean>(options, ['force']);
 
   if (!id) {
     printFailure(context, 'Access key ID is required');
@@ -44,6 +46,15 @@ export default async function remove(options: Record<string, unknown>) {
   if (!isAuthenticated) {
     printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
     process.exit(1);
+  }
+
+  if (!force) {
+    requireInteractive('Use --force to skip confirmation');
+    const confirmed = await confirm(`Delete access key '${id}'?`);
+    if (!confirmed) {
+      console.log('Aborted');
+      return;
+    }
   }
 
   const accessToken = await authClient.getAccessToken();

@@ -241,6 +241,24 @@ describe('CLI Help Commands', () => {
   });
 });
 
+describe('Destructive commands require --force in non-TTY', () => {
+  // These tests verify that destructive commands refuse to run without --force
+  // when stdin is not a TTY (piped/scripted mode). Since runCli uses
+  // stdio: ['ignore', ...], stdin is not a TTY.
+
+  it('objects delete should require --force', () => {
+    const result = runCli('objects delete fake-bucket fake-key');
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('--force');
+  });
+
+  it('buckets delete should require --force', () => {
+    const result = runCli('buckets delete fake-bucket');
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('--force');
+  });
+});
+
 describe.skipIf(skipTests)('CLI Integration Tests', () => {
   // Generate unique prefix for all test resources
   const testPrefix = getTestPrefix();
@@ -1157,20 +1175,30 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
   });
 
   describe('buckets delete command', () => {
-    it('should delete a single bucket', () => {
+    it('should delete a single bucket with --force', () => {
       const name = `${testPrefix}-bd-1`;
       runCli(`mk ${name}`);
-      const result = runCli(`buckets delete ${name}`);
+      const result = runCli(`buckets delete ${name} --force`);
       expect(result.exitCode).toBe(0);
     });
 
-    it('should delete multiple buckets', () => {
+    it('should delete multiple buckets with --force', () => {
       const name1 = `${testPrefix}-bd-2`;
       const name2 = `${testPrefix}-bd-3`;
       runCli(`mk ${name1}`);
       runCli(`mk ${name2}`);
-      const result = runCli(`buckets delete ${name1},${name2}`);
+      const result = runCli(`buckets delete ${name1},${name2} --force`);
       expect(result.exitCode).toBe(0);
+    });
+
+    it('should fail without --force in non-TTY', () => {
+      const name = `${testPrefix}-bd-nf`;
+      runCli(`mk ${name}`);
+      const result = runCli(`buckets delete ${name}`);
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('--force');
+      // Cleanup
+      runCli(`buckets delete ${name} --force`);
     });
   });
 
@@ -1609,21 +1637,32 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
   });
 
   describe('objects delete command', () => {
-    it('should delete a single object', () => {
+    it('should delete a single object with --force', () => {
       runCli(`touch ${testBucket}/objdel-1.txt`);
       const result = runCli(
-        `objects delete ${testBucket} objdel-1.txt`
+        `objects delete ${testBucket} objdel-1.txt --force`
       );
       expect(result.exitCode).toBe(0);
     });
 
-    it('should delete multiple objects', () => {
+    it('should delete multiple objects with --force', () => {
       runCli(`touch ${testBucket}/objdel-2.txt`);
       runCli(`touch ${testBucket}/objdel-3.txt`);
       const result = runCli(
-        `objects delete ${testBucket} objdel-2.txt,objdel-3.txt`
+        `objects delete ${testBucket} objdel-2.txt,objdel-3.txt --force`
       );
       expect(result.exitCode).toBe(0);
+    });
+
+    it('should fail without --force in non-TTY', () => {
+      runCli(`touch ${testBucket}/objdel-noforce.txt`);
+      const result = runCli(
+        `objects delete ${testBucket} objdel-noforce.txt`
+      );
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('--force');
+      // Cleanup
+      runCli(`objects delete ${testBucket} objdel-noforce.txt --force`);
     });
   });
 

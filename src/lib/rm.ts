@@ -1,4 +1,3 @@
-import * as readline from 'readline';
 import {
   isRemotePath,
   parseRemotePath,
@@ -10,23 +9,9 @@ import {
 import { getOption } from '../utils/options.js';
 import { getStorageConfig } from '../auth/s3-client.js';
 import { remove, removeBucket, list } from '@tigrisdata/storage';
-import { requireInteractive } from '../utils/interactive.js';
+import { requireInteractive, confirm } from '../utils/interactive.js';
 
 let _jsonMode = false;
-
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} (y/N): `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y');
-    });
-  });
-}
 
 export default async function rm(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);

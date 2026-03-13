@@ -1,4 +1,3 @@
-import * as readline from 'readline';
 import {
   isRemotePath,
   parseRemotePath,
@@ -10,25 +9,11 @@ import {
 import { getOption } from '../utils/options.js';
 import { getStorageConfig } from '../auth/s3-client.js';
 import { formatSize } from '../utils/format.js';
-import { requireInteractive } from '../utils/interactive.js';
+import { requireInteractive, confirm } from '../utils/interactive.js';
 import { get, put, remove, list, head } from '@tigrisdata/storage';
 import { calculateUploadParams } from '../utils/upload.js';
 
 let _jsonMode = false;
-
-async function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(`${message} (y/N): `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() === 'y');
-    });
-  });
-}
 
 export default async function mv(options: Record<string, unknown>) {
   const src = getOption<string>(options, ['src']);

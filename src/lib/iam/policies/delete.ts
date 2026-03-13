@@ -1,6 +1,6 @@
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { requireInteractive } from '../../../utils/interactive.js';
+import { requireInteractive, confirm } from '../../../utils/interactive.js';
 import { getOption } from '../../../utils/options.js';
 import { getLoginMethod } from '../../../auth/s3-client.js';
 import { getAuthClient } from '../../../auth/client.js';
@@ -21,6 +21,7 @@ export default async function del(options: Record<string, unknown>) {
   printStart(context);
 
   let resource = getOption<string>(options, ['resource']);
+  const force = getOption<boolean>(options, ['force']);
 
   const loginMethod = await getLoginMethod();
 
@@ -79,6 +80,15 @@ export default async function del(options: Record<string, unknown>) {
     });
 
     resource = selected;
+  }
+
+  if (!force) {
+    requireInteractive('Use --force to skip confirmation');
+    const confirmed = await confirm(`Delete policy '${resource}'?`);
+    if (!confirmed) {
+      console.log('Aborted');
+      return;
+    }
   }
 
   const { error } = await deletePolicy(resource, {
