@@ -23,7 +23,7 @@ export default async function remove(options: Record<string, unknown>) {
     : getOption<string>(options, ['format', 'f', 'F'], 'table');
 
   const id = getOption<string>(options, ['id']);
-  const force = getOption<boolean>(options, ['force']);
+  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
 
   if (!id) {
     printFailure(context, 'Access key ID is required');
@@ -49,7 +49,7 @@ export default async function remove(options: Record<string, unknown>) {
   }
 
   if (!force) {
-    requireInteractive('Use --force to skip confirmation');
+    requireInteractive('Use --yes to skip confirmation');
     const confirmed = await confirm(`Delete access key '${id}'?`);
     if (!confirmed) {
       console.log('Aborted');

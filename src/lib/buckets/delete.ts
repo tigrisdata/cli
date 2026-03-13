@@ -20,7 +20,7 @@ export default async function deleteBucket(options: Record<string, unknown>) {
     : getOption<string>(options, ['format', 'f', 'F'], 'table');
 
   const names = getOption<string | string[]>(options, ['name']);
-  const force = getOption<boolean>(options, ['force']);
+  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
 
   if (!names) {
     printFailure(context, 'Bucket name is required');
@@ -31,7 +31,7 @@ export default async function deleteBucket(options: Record<string, unknown>) {
   const config = await getStorageConfig();
 
   if (!force) {
-    requireInteractive('Use --force to skip confirmation');
+    requireInteractive('Use --yes to skip confirmation');
     const confirmed = await confirm(`Delete ${bucketNames.length} bucket(s)?`);
     if (!confirmed) {
       console.log('Aborted');

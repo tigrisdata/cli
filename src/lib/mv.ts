@@ -18,7 +18,7 @@ let _jsonMode = false;
 export default async function mv(options: Record<string, unknown>) {
   const src = getOption<string>(options, ['src']);
   const dest = getOption<string>(options, ['dest']);
-  const force = getOption<boolean>(options, ['force', 'f', 'F']);
+  const force = getOption<boolean>(options, ['force', 'f', 'F', 'yes', 'y']);
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
   const jsonFlag = getOption<boolean>(options, ['json']);
   const format = jsonFlag
@@ -159,7 +159,7 @@ export default async function mv(options: Record<string, unknown>) {
 
     const totalToMove = itemsToMove.length + (hasFolderMarker ? 1 : 0);
     if (!force) {
-      requireInteractive('Use --force to skip confirmation');
+      requireInteractive('Use --yes to skip confirmation');
       const confirmed = await confirm(
         `Are you sure you want to move ${totalToMove} object(s)?`
       );
@@ -273,7 +273,7 @@ export default async function mv(options: Record<string, unknown>) {
     }
 
     if (!force) {
-      requireInteractive('Use --force to skip confirmation');
+      requireInteractive('Use --yes to skip confirmation');
       const confirmed = await confirm(
         `Are you sure you want to move 't3://${srcPath.bucket}/${srcPath.path}'?`
       );

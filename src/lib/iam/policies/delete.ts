@@ -21,7 +21,7 @@ export default async function del(options: Record<string, unknown>) {
   printStart(context);
 
   let resource = getOption<string>(options, ['resource']);
-  const force = getOption<boolean>(options, ['force']);
+  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
 
   const loginMethod = await getLoginMethod();
 
@@ -83,7 +83,7 @@ export default async function del(options: Record<string, unknown>) {
   }
 
   if (!force) {
-    requireInteractive('Use --force to skip confirmation');
+    requireInteractive('Use --yes to skip confirmation');
     const confirmed = await confirm(`Delete policy '${resource}'?`);
     if (!confirmed) {
       console.log('Aborted');

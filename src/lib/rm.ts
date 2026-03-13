@@ -15,7 +15,7 @@ let _jsonMode = false;
 
 export default async function rm(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);
-  const force = getOption<boolean>(options, ['force', 'f', 'F']);
+  const force = getOption<boolean>(options, ['force', 'f', 'F', 'yes', 'y']);
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
   const jsonFlag = getOption<boolean>(options, ['json']);
   const format = jsonFlag
@@ -46,7 +46,7 @@ export default async function rm(options: Record<string, unknown>) {
   const rawEndsWithSlash = pathString.endsWith('/');
   if (!path && !rawEndsWithSlash) {
     if (!force) {
-      requireInteractive('Use --force to skip confirmation');
+      requireInteractive('Use --yes to skip confirmation');
       const confirmed = await confirm(
         `Are you sure you want to delete bucket '${bucket}'?`
       );
@@ -153,7 +153,7 @@ export default async function rm(options: Record<string, unknown>) {
     }
 
     if (!force) {
-      requireInteractive('Use --force to skip confirmation');
+      requireInteractive('Use --yes to skip confirmation');
       const confirmed = await confirm(
         `Are you sure you want to delete ${totalItems} object(s)?`
       );
@@ -209,7 +209,7 @@ export default async function rm(options: Record<string, unknown>) {
   } else {
     // Remove single object
     if (!force) {
-      requireInteractive('Use --force to skip confirmation');
+      requireInteractive('Use --yes to skip confirmation');
       const confirmed = await confirm(
         `Are you sure you want to delete 't3://${bucket}/${path}'?`
       );

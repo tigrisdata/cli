@@ -22,7 +22,7 @@ export default async function removeUser(options: Record<string, unknown>) {
   printStart(context);
 
   const resourceOption = getOption<string | string[]>(options, ['resource']);
-  const force = getOption<boolean>(options, ['force']);
+  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
 
   const loginMethod = await getLoginMethod();
 
@@ -101,7 +101,7 @@ export default async function removeUser(options: Record<string, unknown>) {
   }
 
   if (!force) {
-    requireInteractive('Use --force to skip confirmation');
+    requireInteractive('Use --yes to skip confirmation');
     const confirmed = await confirm(`Remove ${resources.length} user(s)?`);
     if (!confirmed) {
       console.log('Aborted');

@@ -21,7 +21,7 @@ export default async function deleteObject(options: Record<string, unknown>) {
 
   const bucket = getOption<string>(options, ['bucket']);
   const keys = getOption<string | string[]>(options, ['key']);
-  const force = getOption<boolean>(options, ['force']);
+  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
 
   if (!bucket) {
     printFailure(context, 'Bucket name is required');
@@ -37,7 +37,7 @@ export default async function deleteObject(options: Record<string, unknown>) {
   const keyList = Array.isArray(keys) ? keys : [keys];
 
   if (!force) {
-    requireInteractive('Use --force to skip confirmation');
+    requireInteractive('Use --yes to skip confirmation');
     const confirmed = await confirm(
       `Delete ${keyList.length} object(s) from '${bucket}'?`
     );

@@ -246,16 +246,16 @@ describe('Destructive commands require --force in non-TTY', () => {
   // when stdin is not a TTY (piped/scripted mode). Since runCli uses
   // stdio: ['ignore', ...], stdin is not a TTY.
 
-  it('objects delete should require --force', () => {
+  it('objects delete should require confirmation in non-TTY', () => {
     const result = runCli('objects delete fake-bucket fake-key');
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('--force');
+    expect(result.stderr).toContain('Use --yes to skip confirmation');
   });
 
-  it('buckets delete should require --force', () => {
+  it('buckets delete should require confirmation in non-TTY', () => {
     const result = runCli('buckets delete fake-bucket');
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('--force');
+    expect(result.stderr).toContain('Use --yes to skip confirmation');
   });
 });
 
@@ -1196,7 +1196,7 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
       runCli(`mk ${name}`);
       const result = runCli(`buckets delete ${name}`);
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('--force');
+      expect(result.stderr).toContain('--yes');
       // Cleanup
       runCli(`buckets delete ${name} --force`);
     });
@@ -1660,7 +1660,7 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
         `objects delete ${testBucket} objdel-noforce.txt`
       );
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('--force');
+      expect(result.stderr).toContain('--yes');
       // Cleanup
       runCli(`objects delete ${testBucket} objdel-noforce.txt --force`);
     });

@@ -24,7 +24,7 @@ export default async function revokeInvitation(
   printStart(context);
 
   const resourceOption = getOption<string | string[]>(options, ['resource']);
-  const force = getOption<boolean>(options, ['force']);
+  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
 
   const loginMethod = await getLoginMethod();
 
@@ -104,7 +104,7 @@ export default async function revokeInvitation(
   }
 
   if (!force) {
-    requireInteractive('Use --force to skip confirmation');
+    requireInteractive('Use --yes to skip confirmation');
     const confirmed = await confirm(
       `Revoke ${resources.length} invitation(s)?`
     );
