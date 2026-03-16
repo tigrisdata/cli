@@ -39,20 +39,25 @@ export default async function deleteBucket(options: Record<string, unknown>) {
     }
   }
 
-  const results: string[] = [];
+  const deleted: string[] = [];
+  const errors: { name: string; error: string }[] = [];
   for (const name of bucketNames) {
     const { error } = await removeBucket(name, { config });
 
     if (error) {
       printFailure(context, error.message, { name });
-      process.exit(1);
+      errors.push({ name, error: error.message });
+    } else {
+      deleted.push(name);
+      printSuccess(context, { name });
     }
-
-    results.push(name);
-    printSuccess(context, { name });
   }
 
   if (format === 'json') {
-    console.log(JSON.stringify({ action: 'deleted', names: results }));
+    console.log(JSON.stringify({ action: 'deleted', names: deleted, errors }));
+  }
+
+  if (errors.length > 0) {
+    process.exit(1);
   }
 }

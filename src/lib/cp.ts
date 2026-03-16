@@ -435,7 +435,7 @@ async function copyLocalToRemote(
       destParsed.bucket,
       destKey,
       config,
-      true
+      !_jsonMode
     );
     if (result.error) {
       console.error(result.error);
@@ -602,7 +602,7 @@ async function copyRemoteToLocal(
       srcParsed.path,
       localFilePath,
       config,
-      true
+      !_jsonMode
     );
     if (result.error) {
       console.error(result.error);
@@ -831,7 +831,7 @@ async function copyRemoteToRemote(
       srcParsed.path,
       destParsed.bucket,
       destKey,
-      true
+      !_jsonMode
     );
 
     if (result.error) {
@@ -870,7 +870,7 @@ export default async function cp(options: Record<string, unknown>) {
   const jsonFlag = getOption<boolean>(options, ['json']);
   const format = jsonFlag
     ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+    : getOption<string>(options, ['format'], 'table');
   _jsonMode = format === 'json';
 
   const direction = detectDirection(src, dest);

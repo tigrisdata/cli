@@ -20,7 +20,7 @@ export default async function rm(options: Record<string, unknown>) {
   const jsonFlag = getOption<boolean>(options, ['json']);
   const format = jsonFlag
     ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+    : getOption<string>(options, ['format'], 'table');
   _jsonMode = format === 'json';
 
   if (!pathString) {

@@ -48,6 +48,7 @@ export default async function deleteObject(options: Record<string, unknown>) {
   }
 
   const deleted: string[] = [];
+  const errors: { key: string; error: string }[] = [];
   for (const key of keyList) {
     const { error } = await remove(key, {
       config: {
@@ -58,14 +59,20 @@ export default async function deleteObject(options: Record<string, unknown>) {
 
     if (error) {
       printFailure(context, error.message, { key });
-      process.exit(1);
+      errors.push({ key, error: error.message });
+    } else {
+      deleted.push(key);
+      printSuccess(context, { key });
     }
-
-    deleted.push(key);
-    printSuccess(context, { key });
   }
 
   if (format === 'json') {
-    console.log(JSON.stringify({ action: 'deleted', bucket, keys: deleted }));
+    console.log(
+      JSON.stringify({ action: 'deleted', bucket, keys: deleted, errors })
+    );
+  }
+
+  if (errors.length > 0) {
+    process.exit(1);
   }
 }

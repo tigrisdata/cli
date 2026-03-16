@@ -32,7 +32,6 @@
     "test": "vitest run test/utils test/cli-core.test.ts test/specs-completeness.test.ts",
     "test:watch": "vitest",
     "test:all": "vitest run",
-    "test:unit": "vitest run test/utils test/cli-core.test.ts test/specs-completeness.test.ts",
     "test:integration": "vitest run test/cli.test.ts",
     "publint": "publint",
     "updatedocs": "tsx scripts/update-docs.ts",

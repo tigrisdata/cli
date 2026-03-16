@@ -23,7 +23,7 @@ export default async function mv(options: Record<string, unknown>) {
   const jsonFlag = getOption<boolean>(options, ['json']);
   const format = jsonFlag
     ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+    : getOption<string>(options, ['format'], 'table');
   _jsonMode = format === 'json';
 
   if (!src || !dest) {
@@ -289,7 +289,7 @@ export default async function mv(options: Record<string, unknown>) {
       srcPath.path,
       destPath.bucket,
       destKey,
-      true // show progress for single file
+      !_jsonMode // show progress for single file (not in JSON mode)
     );
 
     if (result.error) {
