@@ -1,4 +1,5 @@
-import { classifyError, type NextAction } from './errors.js';
+import { classifyError } from './errors.js';
+import type { NextAction } from '../types.js';
 import { getCommandSpec } from './specs.js';
 import type { MessageContext, MessageVariables } from './messages.js';
 

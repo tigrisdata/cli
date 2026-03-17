@@ -1,3 +1,5 @@
+import type { NextAction } from '../types.js';
+
 export enum ExitCode {
   Success = 0,
   GeneralError = 1,
@@ -14,11 +16,6 @@ export type ErrorCategory =
   | 'rate_limit'
   | 'network'
   | 'general';
-
-export interface NextAction {
-  command: string;
-  description: string;
-}
 
 export interface ClassifiedError {
   exitCode: ExitCode;
@@ -39,10 +36,12 @@ const AUTH_PATTERNS: RegExp[] = [
 const PERMISSION_PATTERNS: RegExp[] = [/access denied/i, /forbidden/i];
 
 const NOT_FOUND_PATTERNS: RegExp[] = [
-  /not found/i,
   /NoSuchBucket/,
   /NoSuchKey/,
-  /does not exist/i,
+  /bucket not found/i,
+  /object not found/i,
+  /resource .+ does not exist/i,
+  /the specified key does not exist/i,
 ];
 
 const RATE_LIMIT_PATTERNS: RegExp[] = [

@@ -83,9 +83,9 @@ export default async function deleteObject(options: Record<string, unknown>) {
     console.log(JSON.stringify(jsonOutput));
   }
 
-  printNextActions(context, { bucket });
-
   if (errors.length > 0) {
     exitWithError(errors[0].error, context);
   }
+
+  printNextActions(context, { bucket });
 }

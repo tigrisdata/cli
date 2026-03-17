@@ -54,7 +54,7 @@ describe('classifyError', () => {
       'Bucket not found',
       'NoSuchBucket',
       'NoSuchKey',
-      'Resource does not exist',
+      'Resource xyz does not exist',
       'The specified key does not exist',
       'Object not found in bucket',
     ];
@@ -120,6 +120,8 @@ describe('classifyError', () => {
       'Bucket name is required',
       'Invalid argument',
       'Something unexpected happened',
+      'Source not found: ./myfile',
+      'File not found: ./report.pdf',
       '',
     ];
 

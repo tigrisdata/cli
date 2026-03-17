@@ -69,9 +69,9 @@ export default async function deleteBucket(options: Record<string, unknown>) {
     console.log(JSON.stringify(output));
   }
 
-  printNextActions(context);
-
   if (errors.length > 0) {
     exitWithError(errors[0].error, context);
   }
+
+  printNextActions(context);
 }
