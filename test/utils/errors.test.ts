@@ -85,7 +85,7 @@ describe('classifyError', () => {
         const result = classifyError(new Error(msg));
         expect(result.exitCode).toBe(ExitCode.RateLimit);
         expect(result.category).toBe('rate_limit');
-        expect(result.nextActions.length).toBeGreaterThan(0);
+        expect(result.nextActions).toEqual([]);
       });
     }
   });

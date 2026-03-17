@@ -89,12 +89,7 @@ function getNotFoundNextActions(): NextAction[] {
 }
 
 function getRateLimitNextActions(): NextAction[] {
-  return [
-    {
-      command: 'Retry after a short delay',
-      description: 'Wait a few seconds and retry the command',
-    },
-  ];
+  return [];
 }
 
 function getNetworkNextActions(): NextAction[] {
