@@ -25,6 +25,7 @@ import { get, put, list, head } from '@tigrisdata/storage';
 import { executeWithConcurrency } from '../utils/concurrency.js';
 import { calculateUploadParams } from '../utils/upload.js';
 import type { ParsedPath } from '../types.js';
+import { exitWithError } from '../utils/exit.js';
 
 let _jsonMode = false;
 
@@ -38,7 +39,9 @@ function detectDirection(src: string, dest: string): CopyDirection {
     console.error(
       'At least one path must be a remote Tigris path (t3:// or tigris://)'
     );
-    process.exit(1);
+    exitWithError(
+      'At least one path must be a remote Tigris path (t3:// or tigris://)'
+    );
   }
 
   if (srcRemote && destRemote) return 'remote-to-remote';
@@ -343,7 +346,7 @@ async function copyLocalToRemote(
     stats = statSync(localPath);
   } catch {
     console.error(`Source not found: ${src}`);
-    process.exit(1);
+    exitWithError(`Source not found: ${src}`);
   }
 
   if (stats.isDirectory()) {
@@ -351,7 +354,9 @@ async function copyLocalToRemote(
       console.error(
         `${src} is a directory (not copied). Use -r to copy recursively.`
       );
-      process.exit(1);
+      exitWithError(
+        `${src} is a directory (not copied). Use -r to copy recursively.`
+      );
     }
 
     const files = listLocalFiles(localPath);
@@ -439,7 +444,7 @@ async function copyLocalToRemote(
     );
     if (result.error) {
       console.error(result.error);
-      process.exit(1);
+      exitWithError(result.error);
     }
     if (_jsonMode) {
       console.log(
@@ -470,7 +475,7 @@ async function copyRemoteToLocal(
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcParsed.path && !rawEndsWithSlash) {
     console.error('Cannot copy a bucket. Provide a path within the bucket.');
-    process.exit(1);
+    exitWithError('Cannot copy a bucket. Provide a path within the bucket.');
   }
 
   const localDest = resolveLocalPath(dest);
@@ -486,7 +491,9 @@ async function copyRemoteToLocal(
     console.error(
       `Source is a remote folder (not copied). Use -r to copy recursively.`
     );
-    process.exit(1);
+    exitWithError(
+      'Source is a remote folder (not copied). Use -r to copy recursively.'
+    );
   }
 
   if (isWildcard || isFolder) {
@@ -512,7 +519,7 @@ async function copyRemoteToLocal(
 
     if (error) {
       console.error(error.message);
-      process.exit(1);
+      exitWithError(error);
     }
 
     let filesToDownload = items.filter((item) => !item.name.endsWith('/'));
@@ -606,7 +613,7 @@ async function copyRemoteToLocal(
     );
     if (result.error) {
       console.error(result.error);
-      process.exit(1);
+      exitWithError(result.error);
     }
     if (_jsonMode) {
       console.log(
@@ -639,7 +646,7 @@ async function copyRemoteToRemote(
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcParsed.path && !rawEndsWithSlash) {
     console.error('Cannot copy a bucket. Provide a path within the bucket.');
-    process.exit(1);
+    exitWithError('Cannot copy a bucket. Provide a path within the bucket.');
   }
 
   const isWildcard = src.includes('*');
@@ -654,7 +661,9 @@ async function copyRemoteToRemote(
     console.error(
       `Source is a remote folder (not copied). Use -r to copy recursively.`
     );
-    process.exit(1);
+    exitWithError(
+      'Source is a remote folder (not copied). Use -r to copy recursively.'
+    );
   }
 
   if (isWildcard || isFolder) {
@@ -685,7 +694,7 @@ async function copyRemoteToRemote(
       prefix === effectiveDestPrefixWithSlash
     ) {
       console.error('Source and destination are the same');
-      process.exit(1);
+      exitWithError('Source and destination are the same');
     }
 
     const { items, error } = await listAllItems(
@@ -696,7 +705,7 @@ async function copyRemoteToRemote(
 
     if (error) {
       console.error(error.message);
-      process.exit(1);
+      exitWithError(error);
     }
 
     let itemsToCopy = items.filter((item) => item.name !== prefix);
@@ -822,7 +831,7 @@ async function copyRemoteToRemote(
 
     if (srcParsed.bucket === destParsed.bucket && srcParsed.path === destKey) {
       console.error('Source and destination are the same');
-      process.exit(1);
+      exitWithError('Source and destination are the same');
     }
 
     const result = await copyObject(
@@ -836,7 +845,7 @@ async function copyRemoteToRemote(
 
     if (result.error) {
       console.error(result.error);
-      process.exit(1);
+      exitWithError(result.error);
     }
 
     if (_jsonMode) {
@@ -863,7 +872,7 @@ export default async function cp(options: Record<string, unknown>) {
 
   if (!src || !dest) {
     console.error('Both src and dest arguments are required');
-    process.exit(1);
+    exitWithError('Both src and dest arguments are required');
   }
 
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
@@ -881,7 +890,7 @@ export default async function cp(options: Record<string, unknown>) {
       const destParsed = parseRemotePath(dest);
       if (!destParsed.bucket) {
         console.error('Invalid destination path');
-        process.exit(1);
+        exitWithError('Invalid destination path');
       }
       await copyLocalToRemote(src, destParsed, config, recursive);
       break;
@@ -890,7 +899,7 @@ export default async function cp(options: Record<string, unknown>) {
       const srcParsed = parseRemotePath(src);
       if (!srcParsed.bucket) {
         console.error('Invalid source path');
-        process.exit(1);
+        exitWithError('Invalid source path');
       }
       await copyRemoteToLocal(src, srcParsed, dest, config, recursive);
       break;
@@ -900,11 +909,11 @@ export default async function cp(options: Record<string, unknown>) {
       const destParsed = parseRemotePath(dest);
       if (!srcParsed.bucket) {
         console.error('Invalid source path');
-        process.exit(1);
+        exitWithError('Invalid source path');
       }
       if (!destParsed.bucket) {
         console.error('Invalid destination path');
-        process.exit(1);
+        exitWithError('Invalid destination path');
       }
       await copyRemoteToRemote(src, srcParsed, destParsed, config, recursive);
       break;

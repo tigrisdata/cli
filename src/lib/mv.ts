@@ -12,6 +12,7 @@ import { formatSize } from '../utils/format.js';
 import { requireInteractive, confirm } from '../utils/interactive.js';
 import { get, put, remove, list, head } from '@tigrisdata/storage';
 import { calculateUploadParams } from '../utils/upload.js';
+import { exitWithError } from '../utils/exit.js';
 
 let _jsonMode = false;
 
@@ -28,14 +29,16 @@ export default async function mv(options: Record<string, unknown>) {
 
   if (!src || !dest) {
     console.error('both src and dest arguments are required');
-    process.exit(1);
+    exitWithError('both src and dest arguments are required');
   }
 
   if (!isRemotePath(src) || !isRemotePath(dest)) {
     console.error(
       'Both src and dest must be remote Tigris paths (t3:// or tigris://)'
     );
-    process.exit(1);
+    exitWithError(
+      'Both src and dest must be remote Tigris paths (t3:// or tigris://)'
+    );
   }
 
   const srcPath = parseRemotePath(src);
@@ -43,12 +46,12 @@ export default async function mv(options: Record<string, unknown>) {
 
   if (!srcPath.bucket) {
     console.error('Invalid source path');
-    process.exit(1);
+    exitWithError('Invalid source path');
   }
 
   if (!destPath.bucket) {
     console.error('Invalid destination path');
-    process.exit(1);
+    exitWithError('Invalid destination path');
   }
 
   // Cannot move a bucket itself
@@ -57,7 +60,7 @@ export default async function mv(options: Record<string, unknown>) {
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcPath.path && !rawEndsWithSlash) {
     console.error('Cannot move a bucket. Provide a path within the bucket.');
-    process.exit(1);
+    exitWithError('Cannot move a bucket. Provide a path within the bucket.');
   }
 
   const config = await getStorageConfig({ withCredentialProvider: true });
@@ -76,7 +79,9 @@ export default async function mv(options: Record<string, unknown>) {
     console.error(
       `Source is a remote folder (not moved). Use -r to move recursively.`
     );
-    process.exit(1);
+    exitWithError(
+      'Source is a remote folder (not moved). Use -r to move recursively.'
+    );
   }
 
   if (isWildcard || isFolder) {
@@ -108,7 +113,7 @@ export default async function mv(options: Record<string, unknown>) {
       prefix === effectiveDestPrefixWithSlash
     ) {
       console.error('Source and destination are the same');
-      process.exit(1);
+      exitWithError('Source and destination are the same');
     }
 
     const { items, error } = await listAllItems(
@@ -119,7 +124,7 @@ export default async function mv(options: Record<string, unknown>) {
 
     if (error) {
       console.error(error.message);
-      process.exit(1);
+      exitWithError(error);
     }
 
     // Filter out folder markers - they're handled separately below
@@ -269,7 +274,7 @@ export default async function mv(options: Record<string, unknown>) {
     // Check for same location
     if (srcPath.bucket === destPath.bucket && srcPath.path === destKey) {
       console.error('Source and destination are the same');
-      process.exit(1);
+      exitWithError('Source and destination are the same');
     }
 
     if (!force) {
@@ -294,7 +299,7 @@ export default async function mv(options: Record<string, unknown>) {
 
     if (result.error) {
       console.error(result.error);
-      process.exit(1);
+      exitWithError(result.error);
     }
 
     if (_jsonMode) {
