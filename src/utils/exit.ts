@@ -19,14 +19,12 @@ function isStdoutTTY(): boolean {
 /**
  * Exit with a classified error code.
  * - JSON mode: outputs structured error JSON to stderr
+ * - Non-JSON without context: prints the error message to stderr
+ *   (callers that pass context already printed via printFailure)
  * - TTY mode: prints "Next steps:" hints to stderr
  * - Always exits with the classified exit code
  */
-export function exitWithError(
-  error: unknown,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _context?: MessageContext
-): never {
+export function exitWithError(error: unknown, context?: MessageContext): never {
   const classified = classifyError(error);
 
   if (isJsonMode()) {
@@ -42,7 +40,9 @@ export function exitWithError(
     }
     console.error(JSON.stringify(errorOutput));
   } else {
-    console.error(`\nError: ${classified.message}`);
+    if (!context) {
+      console.error(`\nError: ${classified.message}`);
+    }
     if (isStderrTTY() && classified.nextActions.length > 0) {
       console.error('\nNext steps:');
       for (const action of classified.nextActions) {
