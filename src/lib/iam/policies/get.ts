@@ -35,7 +35,7 @@ export default async function get(options: Record<string, unknown>) {
       'Policies can only be retrieved when logged in via OAuth.\nRun "tigris login oauth" first.'
     );
     exitWithError(
-      'Policies can only be retrieved when logged in via OAuth.',
+      'Policies can only be retrieved when logged in via OAuth.\nRun "tigris login oauth" first.',
       context
     );
   }

@@ -91,12 +91,14 @@ export function printSuccess(
 
 /**
  * Print the onFailure message for a command/operation
+ * Suppressed in JSON mode to avoid mixing human-readable text with structured JSON on stderr
  */
 export function printFailure(
   context: MessageContext,
   error?: string,
   variables?: MessageVariables
 ): void {
+  if (globalThis.__TIGRIS_JSON_MODE === true) return;
   const messages = getMessages(context);
   if (messages?.onFailure) {
     console.error(

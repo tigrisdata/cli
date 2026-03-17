@@ -33,7 +33,7 @@ export default async function removeUser(options: Record<string, unknown>) {
       'Users can only be removed when logged in via OAuth.\nRun "tigris login oauth" first.'
     );
     exitWithError(
-      'Users can only be removed when logged in via OAuth.',
+      'Users can only be removed when logged in via OAuth.\nRun "tigris login oauth" first.',
       context
     );
   }

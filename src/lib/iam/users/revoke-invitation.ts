@@ -35,7 +35,7 @@ export default async function revokeInvitation(
       'Invitations can only be revoked when logged in via OAuth.\nRun "tigris login oauth" first.'
     );
     exitWithError(
-      'Invitations can only be revoked when logged in via OAuth.',
+      'Invitations can only be revoked when logged in via OAuth.\nRun "tigris login oauth" first.',
       context
     );
   }

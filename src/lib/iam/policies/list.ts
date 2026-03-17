@@ -32,7 +32,7 @@ export default async function list(options: Record<string, unknown>) {
       'Policies can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.'
     );
     exitWithError(
-      'Policies can only be listed when logged in via OAuth.',
+      'Policies can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.',
       context
     );
   }

@@ -34,15 +34,19 @@ export function setupErrorHandlers() {
       console.error('\nOperation cancelled');
       process.exit(1);
     }
-    console.error(
-      '\nError:',
-      reason instanceof Error ? reason.message : reason
-    );
+    if (globalThis.__TIGRIS_JSON_MODE !== true) {
+      console.error(
+        '\nError:',
+        reason instanceof Error ? reason.message : reason
+      );
+    }
     exitWithError(reason);
   });
 
   process.on('uncaughtException', (error) => {
-    console.error('\nError:', error.message);
+    if (globalThis.__TIGRIS_JSON_MODE !== true) {
+      console.error('\nError:', error.message);
+    }
     exitWithError(error);
   });
 }

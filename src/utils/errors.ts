@@ -31,6 +31,7 @@ const AUTH_PATTERNS: RegExp[] = [
   /no organization selected/i,
   /token refresh failed/i,
   /please run "tigris login/i,
+  /logged in via OAuth/i,
 ];
 
 const PERMISSION_PATTERNS: RegExp[] = [/access denied/i, /forbidden/i];

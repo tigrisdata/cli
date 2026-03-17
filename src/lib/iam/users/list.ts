@@ -38,7 +38,7 @@ export default async function list(options: Record<string, unknown>) {
       'Users can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.'
     );
     exitWithError(
-      'Users can only be listed when logged in via OAuth.',
+      'Users can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.',
       context
     );
   }

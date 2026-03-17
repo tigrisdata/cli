@@ -100,14 +100,10 @@ export default async function assign(options: Record<string, unknown>) {
     }
 
     if (format === 'json') {
-      const nextActions = getSuccessNextActions(context);
-      const output: Record<string, unknown> = { action: 'revoked', id };
-      if (nextActions.length > 0) output.nextActions = nextActions;
-      console.log(JSON.stringify(output));
+      console.log(JSON.stringify({ action: 'revoked', id }));
     }
 
     printSuccess(context);
-    printNextActions(context);
     return;
   }
 

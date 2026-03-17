@@ -13,6 +13,8 @@ describe('classifyError', () => {
       'No organization selected',
       'Token refresh failed',
       'Please run "tigris login" to authenticate',
+      'Policies can only be created when logged in via OAuth.',
+      'Users can only be invited when logged in via OAuth.\nRun "tigris login oauth" first.',
     ];
 
     for (const msg of authMessages) {

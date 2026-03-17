@@ -26,7 +26,7 @@ export default async function invite(options: Record<string, unknown>) {
       'Users can only be invited when logged in via OAuth.\nRun "tigris login oauth" first.'
     );
     exitWithError(
-      'Users can only be invited when logged in via OAuth.',
+      'Users can only be invited when logged in via OAuth.\nRun "tigris login oauth" first.',
       context
     );
   }

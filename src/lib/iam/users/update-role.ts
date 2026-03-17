@@ -30,7 +30,7 @@ export default async function updateRole(options: Record<string, unknown>) {
       'User roles can only be updated when logged in via OAuth.\nRun "tigris login oauth" first.'
     );
     exitWithError(
-      'User roles can only be updated when logged in via OAuth.',
+      'User roles can only be updated when logged in via OAuth.\nRun "tigris login oauth" first.',
       context
     );
   }
