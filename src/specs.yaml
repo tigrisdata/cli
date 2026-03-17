@@ -1471,7 +1471,7 @@ commands:
           onSuccess: 'Access key created'
           onFailure: 'Failed to create access key'
           nextActions:
-            - command: 'tigris access-keys assign <id> --bucket <bucket> --role Editor'
+            - command: 'tigris access-keys assign {{id}} --bucket <bucket> --role Editor'
               description: 'Assign bucket roles to the new access key'
         arguments:
           - name: name

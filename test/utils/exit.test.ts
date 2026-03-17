@@ -17,13 +17,17 @@ const specsYaml = readFileSync(
 );
 setSpecs(YAML.parse(specsYaml, { schema: 'core' }));
 
-// Save original TTY descriptor
-const originalIsTTY = Object.getOwnPropertyDescriptor(
+// Save original TTY descriptors
+const originalStdoutIsTTY = Object.getOwnPropertyDescriptor(
   process.stdout,
   'isTTY'
 );
+const originalStderrIsTTY = Object.getOwnPropertyDescriptor(
+  process.stderr,
+  'isTTY'
+);
 
-function setTTY(value: boolean) {
+function setStdoutTTY(value: boolean) {
   Object.defineProperty(process.stdout, 'isTTY', {
     value,
     writable: true,
@@ -31,11 +35,24 @@ function setTTY(value: boolean) {
   });
 }
 
+function setStderrTTY(value: boolean) {
+  Object.defineProperty(process.stderr, 'isTTY', {
+    value,
+    writable: true,
+    configurable: true,
+  });
+}
+
 function restoreTTY() {
-  if (originalIsTTY) {
-    Object.defineProperty(process.stdout, 'isTTY', originalIsTTY);
+  if (originalStdoutIsTTY) {
+    Object.defineProperty(process.stdout, 'isTTY', originalStdoutIsTTY);
   } else {
     delete (process.stdout as unknown as Record<string, unknown>).isTTY;
+  }
+  if (originalStderrIsTTY) {
+    Object.defineProperty(process.stderr, 'isTTY', originalStderrIsTTY);
+  } else {
+    delete (process.stderr as unknown as Record<string, unknown>).isTTY;
   }
 }
 
@@ -129,7 +146,7 @@ describe('exitWithError', () => {
   });
 
   it('prints next steps hints in TTY mode for classified errors', () => {
-    setTTY(true);
+    setStderrTTY(true);
     exitWithError(new Error('access denied'));
 
     const allOutput = errorSpy.mock.calls.map((c) => c.join(' ')).join('\n');
@@ -138,7 +155,7 @@ describe('exitWithError', () => {
   });
 
   it('does not print next steps in non-TTY non-JSON mode', () => {
-    setTTY(false);
+    setStderrTTY(false);
     setJsonMode(false);
     exitWithError(new Error('access denied'));
 
@@ -196,7 +213,7 @@ describe('printNextActions', () => {
   });
 
   it('prints next steps in TTY mode', () => {
-    setTTY(true);
+    setStdoutTTY(true);
     printNextActions(
       { command: 'buckets', operation: 'create' },
       { name: 'my-bucket' }
@@ -208,7 +225,7 @@ describe('printNextActions', () => {
   });
 
   it('is silent when not TTY', () => {
-    setTTY(false);
+    setStdoutTTY(false);
     printNextActions(
       { command: 'buckets', operation: 'create' },
       { name: 'my-bucket' }
@@ -217,7 +234,7 @@ describe('printNextActions', () => {
   });
 
   it('is silent when no nextActions defined', () => {
-    setTTY(true);
+    setStdoutTTY(true);
     printNextActions({ command: 'buckets', operation: 'list' });
     expect(logSpy).not.toHaveBeenCalled();
   });
