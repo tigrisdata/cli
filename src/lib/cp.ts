@@ -36,9 +36,6 @@ function detectDirection(src: string, dest: string): CopyDirection {
   const destRemote = isRemotePath(dest);
 
   if (!srcRemote && !destRemote) {
-    console.error(
-      'At least one path must be a remote Tigris path (t3:// or tigris://)'
-    );
     exitWithError(
       'At least one path must be a remote Tigris path (t3:// or tigris://)'
     );
@@ -345,15 +342,11 @@ async function copyLocalToRemote(
   try {
     stats = statSync(localPath);
   } catch {
-    console.error(`Source not found: ${src}`);
     exitWithError(`Source not found: ${src}`);
   }
 
   if (stats.isDirectory()) {
     if (!recursive) {
-      console.error(
-        `${src} is a directory (not copied). Use -r to copy recursively.`
-      );
       exitWithError(
         `${src} is a directory (not copied). Use -r to copy recursively.`
       );
@@ -443,7 +436,6 @@ async function copyLocalToRemote(
       !_jsonMode
     );
     if (result.error) {
-      console.error(result.error);
       exitWithError(result.error);
     }
     if (_jsonMode) {
@@ -474,7 +466,6 @@ async function copyRemoteToLocal(
   // t3://bucket/ (no path, trailing slash) = copy all contents from bucket root
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcParsed.path && !rawEndsWithSlash) {
-    console.error('Cannot copy a bucket. Provide a path within the bucket.');
     exitWithError('Cannot copy a bucket. Provide a path within the bucket.');
   }
 
@@ -488,9 +479,6 @@ async function copyRemoteToLocal(
   }
 
   if (isFolder && !isWildcard && !recursive) {
-    console.error(
-      `Source is a remote folder (not copied). Use -r to copy recursively.`
-    );
     exitWithError(
       'Source is a remote folder (not copied). Use -r to copy recursively.'
     );
@@ -518,7 +506,6 @@ async function copyRemoteToLocal(
     );
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 
@@ -612,7 +599,6 @@ async function copyRemoteToLocal(
       !_jsonMode
     );
     if (result.error) {
-      console.error(result.error);
       exitWithError(result.error);
     }
     if (_jsonMode) {
@@ -645,7 +631,6 @@ async function copyRemoteToRemote(
   // t3://bucket/ (no path, trailing slash) = copy all contents from bucket root
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcParsed.path && !rawEndsWithSlash) {
-    console.error('Cannot copy a bucket. Provide a path within the bucket.');
     exitWithError('Cannot copy a bucket. Provide a path within the bucket.');
   }
 
@@ -658,9 +643,6 @@ async function copyRemoteToRemote(
   }
 
   if (isFolder && !isWildcard && !recursive) {
-    console.error(
-      `Source is a remote folder (not copied). Use -r to copy recursively.`
-    );
     exitWithError(
       'Source is a remote folder (not copied). Use -r to copy recursively.'
     );
@@ -693,7 +675,6 @@ async function copyRemoteToRemote(
       srcParsed.bucket === destParsed.bucket &&
       prefix === effectiveDestPrefixWithSlash
     ) {
-      console.error('Source and destination are the same');
       exitWithError('Source and destination are the same');
     }
 
@@ -704,7 +685,6 @@ async function copyRemoteToRemote(
     );
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 
@@ -830,7 +810,6 @@ async function copyRemoteToRemote(
     }
 
     if (srcParsed.bucket === destParsed.bucket && srcParsed.path === destKey) {
-      console.error('Source and destination are the same');
       exitWithError('Source and destination are the same');
     }
 
@@ -844,7 +823,6 @@ async function copyRemoteToRemote(
     );
 
     if (result.error) {
-      console.error(result.error);
       exitWithError(result.error);
     }
 
@@ -871,7 +849,6 @@ export default async function cp(options: Record<string, unknown>) {
   const dest = getOption<string>(options, ['dest']);
 
   if (!src || !dest) {
-    console.error('Both src and dest arguments are required');
     exitWithError('Both src and dest arguments are required');
   }
 
@@ -889,7 +866,6 @@ export default async function cp(options: Record<string, unknown>) {
     case 'local-to-remote': {
       const destParsed = parseRemotePath(dest);
       if (!destParsed.bucket) {
-        console.error('Invalid destination path');
         exitWithError('Invalid destination path');
       }
       await copyLocalToRemote(src, destParsed, config, recursive);
@@ -898,7 +874,6 @@ export default async function cp(options: Record<string, unknown>) {
     case 'remote-to-local': {
       const srcParsed = parseRemotePath(src);
       if (!srcParsed.bucket) {
-        console.error('Invalid source path');
         exitWithError('Invalid source path');
       }
       await copyRemoteToLocal(src, srcParsed, dest, config, recursive);
@@ -908,11 +883,9 @@ export default async function cp(options: Record<string, unknown>) {
       const srcParsed = parseRemotePath(src);
       const destParsed = parseRemotePath(dest);
       if (!srcParsed.bucket) {
-        console.error('Invalid source path');
         exitWithError('Invalid source path');
       }
       if (!destParsed.bucket) {
-        console.error('Invalid destination path');
         exitWithError('Invalid destination path');
       }
       await copyRemoteToRemote(src, srcParsed, destParsed, config, recursive);

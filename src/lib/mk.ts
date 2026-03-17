@@ -9,14 +9,12 @@ export default async function mk(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);
 
   if (!pathString) {
-    console.error('path argument is required');
     exitWithError('path argument is required');
   }
 
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    console.error('Invalid path');
     exitWithError('Invalid path');
   }
 
@@ -74,7 +72,6 @@ export default async function mk(options: Record<string, unknown>) {
     }
 
     if (sourceSnapshot && !forkOf) {
-      console.error('--source-snapshot requires --fork-of');
       exitWithError('--source-snapshot requires --fork-of');
     }
 
@@ -89,7 +86,6 @@ export default async function mk(options: Record<string, unknown>) {
     });
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 
@@ -113,7 +109,6 @@ export default async function mk(options: Record<string, unknown>) {
     });
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 

@@ -41,10 +41,13 @@ export function exitWithError(
       errorOutput.nextActions = classified.nextActions;
     }
     console.error(JSON.stringify(errorOutput));
-  } else if (isStderrTTY() && classified.nextActions.length > 0) {
-    console.error('\nNext steps:');
-    for (const action of classified.nextActions) {
-      console.error(`  → ${action.command}  ${action.description}`);
+  } else {
+    console.error(`\nError: ${classified.message}`);
+    if (isStderrTTY() && classified.nextActions.length > 0) {
+      console.error('\nNext steps:');
+      for (const action of classified.nextActions) {
+        console.error(`  → ${action.command}  ${action.description}`);
+      }
     }
   }
 

@@ -25,19 +25,16 @@ export default async function rm(options: Record<string, unknown>) {
   _jsonMode = format === 'json';
 
   if (!pathString) {
-    console.error('path argument is required');
     exitWithError('path argument is required');
   }
 
   if (!isRemotePath(pathString)) {
-    console.error('Path must be a remote Tigris path (t3:// or tigris://)');
     exitWithError('Path must be a remote Tigris path (t3:// or tigris://)');
   }
 
   const { bucket, path } = parseRemotePath(pathString);
 
   if (!bucket) {
-    console.error('Invalid path');
     exitWithError('Invalid path');
   }
 
@@ -60,7 +57,6 @@ export default async function rm(options: Record<string, unknown>) {
     const { error } = await removeBucket(bucket, { config });
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 
@@ -82,9 +78,6 @@ export default async function rm(options: Record<string, unknown>) {
   }
 
   if (isFolder && !isWildcard && !recursive) {
-    console.error(
-      `Source is a remote folder (not removed). Use -r to remove recursively.`
-    );
     exitWithError(
       'Source is a remote folder (not removed). Use -r to remove recursively.'
     );
@@ -107,7 +100,6 @@ export default async function rm(options: Record<string, unknown>) {
     );
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 
@@ -230,7 +222,6 @@ export default async function rm(options: Record<string, unknown>) {
     });
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 

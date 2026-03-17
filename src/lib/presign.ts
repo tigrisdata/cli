@@ -16,19 +16,16 @@ export default async function presign(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);
 
   if (!pathString) {
-    console.error('path argument is required');
     exitWithError('path argument is required');
   }
 
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    console.error('Invalid path');
     exitWithError('Invalid path');
   }
 
   if (!path) {
-    console.error('Object key is required');
     exitWithError('Object key is required');
   }
 
@@ -59,9 +56,6 @@ export default async function presign(options: Record<string, unknown>) {
     const loginMethod = await getLoginMethod();
 
     if (loginMethod !== 'oauth') {
-      console.error(
-        'Presigning requires an access key. Pass --access-key or configure credentials.'
-      );
       exitWithError(
         'Presigning requires an access key. Pass --access-key or configure credentials.'
       );
@@ -71,9 +65,6 @@ export default async function presign(options: Record<string, unknown>) {
   }
 
   if (!accessKeyId) {
-    console.error(
-      'Presigning requires an access key. Pass --access-key or configure credentials.'
-    );
     exitWithError(
       'Presigning requires an access key. Pass --access-key or configure credentials.'
     );
@@ -90,7 +81,6 @@ export default async function presign(options: Record<string, unknown>) {
   });
 
   if (error) {
-    console.error(error.message);
     exitWithError(error);
   }
 
@@ -115,9 +105,6 @@ async function resolveAccessKeyInteractively(
   targetBucket: string
 ): Promise<string> {
   if (!process.stdin.isTTY) {
-    console.error(
-      'Presigning requires an access key. Pass --access-key tid_...'
-    );
     exitWithError(
       'Presigning requires an access key. Pass --access-key tid_...'
     );
@@ -137,14 +124,10 @@ async function resolveAccessKeyInteractively(
   });
 
   if (error) {
-    console.error(`Failed to list access keys: ${error.message}`);
     exitWithError(error);
   }
 
   if (!data.accessKeys || data.accessKeys.length === 0) {
-    console.error(
-      'No access keys found. Create one with "tigris access-keys create <name>"'
-    );
     exitWithError(
       'No access keys found. Create one with "tigris access-keys create <name>"'
     );
@@ -168,9 +151,6 @@ async function resolveAccessKeyInteractively(
     );
 
     if (activeKeys.length === 0) {
-      console.error(
-        'No active access keys found. Create one with "tigris access-keys create <name>"'
-      );
       exitWithError(
         'No active access keys found. Create one with "tigris access-keys create <name>"'
       );

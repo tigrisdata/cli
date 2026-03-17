@@ -28,14 +28,10 @@ export default async function mv(options: Record<string, unknown>) {
   _jsonMode = format === 'json';
 
   if (!src || !dest) {
-    console.error('both src and dest arguments are required');
     exitWithError('both src and dest arguments are required');
   }
 
   if (!isRemotePath(src) || !isRemotePath(dest)) {
-    console.error(
-      'Both src and dest must be remote Tigris paths (t3:// or tigris://)'
-    );
     exitWithError(
       'Both src and dest must be remote Tigris paths (t3:// or tigris://)'
     );
@@ -45,12 +41,10 @@ export default async function mv(options: Record<string, unknown>) {
   const destPath = parseRemotePath(dest);
 
   if (!srcPath.bucket) {
-    console.error('Invalid source path');
     exitWithError('Invalid source path');
   }
 
   if (!destPath.bucket) {
-    console.error('Invalid destination path');
     exitWithError('Invalid destination path');
   }
 
@@ -59,7 +53,6 @@ export default async function mv(options: Record<string, unknown>) {
   // t3://bucket/ (no path, trailing slash) = move all contents from bucket root
   const rawEndsWithSlash = src.endsWith('/');
   if (!srcPath.path && !rawEndsWithSlash) {
-    console.error('Cannot move a bucket. Provide a path within the bucket.');
     exitWithError('Cannot move a bucket. Provide a path within the bucket.');
   }
 
@@ -76,9 +69,6 @@ export default async function mv(options: Record<string, unknown>) {
   }
 
   if (isFolder && !isWildcard && !recursive) {
-    console.error(
-      `Source is a remote folder (not moved). Use -r to move recursively.`
-    );
     exitWithError(
       'Source is a remote folder (not moved). Use -r to move recursively.'
     );
@@ -112,7 +102,6 @@ export default async function mv(options: Record<string, unknown>) {
       srcPath.bucket === destPath.bucket &&
       prefix === effectiveDestPrefixWithSlash
     ) {
-      console.error('Source and destination are the same');
       exitWithError('Source and destination are the same');
     }
 
@@ -123,7 +112,6 @@ export default async function mv(options: Record<string, unknown>) {
     );
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 
@@ -273,7 +261,6 @@ export default async function mv(options: Record<string, unknown>) {
 
     // Check for same location
     if (srcPath.bucket === destPath.bucket && srcPath.path === destKey) {
-      console.error('Source and destination are the same');
       exitWithError('Source and destination are the same');
     }
 
@@ -298,7 +285,6 @@ export default async function mv(options: Record<string, unknown>) {
     );
 
     if (result.error) {
-      console.error(result.error);
       exitWithError(result.error);
     }
 

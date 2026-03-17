@@ -23,7 +23,6 @@ export default async function ls(options: Record<string, unknown>) {
     const { data, error } = await listBuckets({ config });
 
     if (error) {
-      console.error(error.message);
       exitWithError(error);
     }
 
@@ -44,7 +43,6 @@ export default async function ls(options: Record<string, unknown>) {
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    console.error('Invalid path');
     exitWithError('Invalid path');
   }
 
@@ -63,7 +61,6 @@ export default async function ls(options: Record<string, unknown>) {
   });
 
   if (error) {
-    console.error(error.message);
     exitWithError(error);
   }
 
