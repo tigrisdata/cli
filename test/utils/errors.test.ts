@@ -161,6 +161,13 @@ describe('classifyError', () => {
       expect(result.exitCode).toBe(ExitCode.NotFound);
     });
 
+    it('handles plain objects with message property (SDK errors)', () => {
+      const sdkError = { message: 'NoSuchBucket', code: 'NoSuchBucket' };
+      const result = classifyError(sdkError);
+      expect(result.exitCode).toBe(ExitCode.NotFound);
+      expect(result.message).toBe('NoSuchBucket');
+    });
+
     it('handles string errors', () => {
       const result = classifyError('NoSuchBucket');
       expect(result.exitCode).toBe(ExitCode.NotFound);

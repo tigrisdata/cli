@@ -82,7 +82,7 @@ export function printNextActions(
   context: MessageContext,
   variables?: MessageVariables
 ): void {
-  if (!isTTY()) return;
+  if (!isTTY() || isJsonMode()) return;
   const nextActions = getSuccessNextActions(context, variables);
   if (nextActions.length === 0) return;
 
