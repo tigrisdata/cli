@@ -3,8 +3,6 @@
  * Creates appropriate S3 client based on login method
  */
 
-import { S3Client } from '@aws-sdk/client-s3';
-import type { HttpRequest } from '@aws-sdk/types';
 import { fromIni } from '@aws-sdk/credential-providers';
 import {
   getLoginMethod as getStoredLoginMethod,
@@ -151,126 +149,6 @@ export async function getStorageConfig(options?: {
   // No valid auth method found — try auto-login in interactive terminals
   if (await triggerAutoLogin()) {
     return getStorageConfig(options);
-  }
-  throw new Error(
-    'Not authenticated. Please run "tigris login" or "tigris configure" first.'
-  );
-}
-
-/**
- * Get configured S3 client based on login method
- */
-export async function getS3Client(): Promise<S3Client> {
-  // 1. AWS profile (only if AWS_PROFILE is set)
-  if (hasAwsProfile()) {
-    const profile = process.env.AWS_PROFILE || 'default';
-    const profileConfig = await getAwsProfileConfig(profile);
-    const client = new S3Client({
-      region: 'auto',
-      endpoint:
-        profileConfig.endpoint ||
-        tigrisConfig.endpoint ||
-        DEFAULT_STORAGE_ENDPOINT,
-      credentials: fromIni({ profile }),
-    });
-
-    return client;
-  }
-
-  // 2. Login (oauth or credentials)
-  const loginMethod = await getLoginMethod();
-
-  if (loginMethod === 'oauth') {
-    const authClient = getAuthClient();
-    const selectedOrg = getSelectedOrganization();
-
-    if (!selectedOrg) {
-      throw new Error(
-        'No organization selected. Please run "tigris orgs select" first.'
-      );
-    }
-
-    const credentialProvider = async () => ({
-      accessKeyId: '',
-      secretAccessKey: '',
-      sessionToken: await authClient.getAccessToken(),
-      expiration: new Date(Date.now() + 10 * 60 * 1000),
-    });
-
-    const client = new S3Client({
-      region: 'auto',
-      endpoint: tigrisConfig.endpoint,
-      credentials: credentialProvider,
-    });
-
-    // Add middleware to inject custom headers
-    client.middlewareStack.add(
-      (next) => async (args) => {
-        const req = args.request as HttpRequest;
-        req.headers['x-Tigris-Namespace'] = selectedOrg;
-        const result = await next(args);
-        return result;
-      },
-      {
-        name: 'x-Tigris-Namespace-Middleware',
-        step: 'build',
-        override: true,
-      }
-    );
-
-    return client;
-  }
-
-  if (loginMethod === 'credentials') {
-    const loginCredentials = getStoredCredentials();
-    if (loginCredentials) {
-      const client = new S3Client({
-        region: 'auto',
-        endpoint: loginCredentials.endpoint,
-        credentials: {
-          accessKeyId: loginCredentials.accessKeyId,
-          secretAccessKey: loginCredentials.secretAccessKey,
-        },
-      });
-
-      return client;
-    }
-  }
-
-  // 3. Env vars
-  const envCredentials = getEnvCredentials();
-  if (envCredentials) {
-    const client = new S3Client({
-      region: 'auto',
-      endpoint: envCredentials.endpoint,
-      credentials: {
-        accessKeyId: envCredentials.accessKeyId,
-        secretAccessKey: envCredentials.secretAccessKey,
-      },
-    });
-
-    return client;
-  }
-
-  // 4. Configured credentials
-  const credentials = getStoredCredentials();
-
-  if (credentials) {
-    const client = new S3Client({
-      region: 'auto',
-      endpoint: credentials.endpoint,
-      credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-      },
-    });
-
-    return client;
-  }
-
-  // No valid auth method found — try auto-login in interactive terminals
-  if (await triggerAutoLogin()) {
-    return getS3Client();
   }
   throw new Error(
     'Not authenticated. Please run "tigris login" or "tigris configure" first.'
