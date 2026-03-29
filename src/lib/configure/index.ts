@@ -7,7 +7,7 @@ import {
   storeLoginMethod,
 } from '@auth/storage.js';
 import { whoami } from '@tigrisdata/iam';
-import { exitWithError, printNextActions } from '@utils/exit.js';
+import { exitWithError, failWithError, printNextActions } from '@utils/exit.js';
 import { requireInteractive } from '@utils/interactive.js';
 import {
   msg,
@@ -85,8 +85,7 @@ export default async function configure(options: Record<string, unknown>) {
 
   // Validate that all required fields are present
   if (!accessKey || !accessSecret || !endpoint) {
-    printFailure(context, 'All credentials are required');
-    exitWithError('All credentials are required', context);
+    failWithError(context, 'All credentials are required');
   }
 
   // Store credentials

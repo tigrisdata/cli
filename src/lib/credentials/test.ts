@@ -1,7 +1,7 @@
 import { getStorageConfig } from '@auth/provider.js';
 import { getSelectedOrganization } from '@auth/storage.js';
 import { getBucketInfo, listBuckets } from '@tigrisdata/storage';
-import { exitWithError } from '@utils/exit.js';
+import { exitWithError, failWithError } from '@utils/exit.js';
 import {
   msg,
   printFailure,
@@ -25,13 +25,9 @@ export default async function test(options: Record<string, unknown>) {
   const config = await getStorageConfig();
 
   if (!config.accessKeyId && !config.sessionToken) {
-    printFailure(
+    failWithError(
       context,
       'No credentials found. Run "tigris configure" or "tigris login" first.'
-    );
-    exitWithError(
-      'No credentials found. Run "tigris configure" or "tigris login" first.',
-      context
     );
   }
 

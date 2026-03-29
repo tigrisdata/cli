@@ -13,6 +13,7 @@ import {
 import { getAuth0Config, getAuthClient } from './client.js';
 import {
   getAwsProfileConfig,
+  getCredentials,
   getEnvCredentials,
   getLoginMethod as getStoredLoginMethod,
   getSelectedOrganization,
@@ -196,4 +197,40 @@ export async function isAuthenticated(): Promise<boolean> {
     getEnvCredentials() !== null ||
     getStoredCredentials() !== null
   );
+}
+
+/**
+ * Get storage config with organization overlay from selected org.
+ */
+export async function getStorageConfigWithOrg() {
+  const config = await getStorageConfig();
+  const selectedOrg = getSelectedOrganization();
+  return {
+    ...config,
+    ...(selectedOrg && !config.organizationId
+      ? { organizationId: selectedOrg }
+      : {}),
+  };
+}
+
+/**
+ * Require OAuth login for organization operations.
+ * Returns true if NOT authenticated via OAuth (caller should return early).
+ */
+export function requireOAuthLogin(operation: string): boolean {
+  const loginMethod = getStoredLoginMethod();
+  if (loginMethod === 'oauth') return false;
+
+  if (getCredentials()) {
+    console.log(
+      `You are using access key credentials, which belong to a single organization.\n` +
+        `${operation} is only available with OAuth login.\n\n` +
+        `Run "tigris login" to login with your Tigris account.`
+    );
+  } else {
+    console.log(
+      'Not authenticated. Please run "tigris login" to login with your Tigris account.'
+    );
+  }
+  return true;
 }

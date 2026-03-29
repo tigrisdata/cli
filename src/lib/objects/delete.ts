@@ -2,6 +2,7 @@ import { getStorageConfig } from '@auth/provider.js';
 import { remove } from '@tigrisdata/storage';
 import {
   exitWithError,
+  failWithError,
   getSuccessNextActions,
   printNextActions,
 } from '@utils/exit.js';
@@ -29,13 +30,11 @@ export default async function deleteObject(options: Record<string, unknown>) {
   const force = getOption<boolean>(options, ['force', 'yes', 'y']);
 
   if (!bucket) {
-    printFailure(context, 'Bucket name is required');
-    exitWithError('Bucket name is required', context);
+    failWithError(context, 'Bucket name is required');
   }
 
   if (!keys) {
-    printFailure(context, 'Object key is required');
-    exitWithError('Object key is required', context);
+    failWithError(context, 'Object key is required');
   }
 
   const config = await getStorageConfig();

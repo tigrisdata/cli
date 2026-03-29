@@ -1,13 +1,7 @@
-import { getStorageConfig } from '@auth/provider.js';
-import { getSelectedOrganization } from '@auth/storage.js';
+import { getStorageConfigWithOrg } from '@auth/provider.js';
 import { setBucketCors } from '@tigrisdata/storage';
-import { exitWithError } from '@utils/exit.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { failWithError } from '@utils/exit.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 const context = msg('buckets', 'set-cors');
@@ -28,8 +22,7 @@ export default async function setCors(options: Record<string, unknown>) {
   const reset = getOption<boolean>(options, ['reset']);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    exitWithError('Bucket name is required', context);
+    failWithError(context, 'Bucket name is required');
   }
 
   if (
@@ -41,28 +34,18 @@ export default async function setCors(options: Record<string, unknown>) {
       maxAge !== undefined ||
       override)
   ) {
-    printFailure(context, 'Cannot use --reset with other options');
-    exitWithError('Cannot use --reset with other options', context);
+    failWithError(context, 'Cannot use --reset with other options');
   }
 
   if (!reset && !origins) {
-    printFailure(context, 'Provide --origins or --reset');
-    exitWithError('Provide --origins or --reset', context);
+    failWithError(context, 'Provide --origins or --reset');
   }
 
   if (maxAge !== undefined && (isNaN(Number(maxAge)) || Number(maxAge) <= 0)) {
-    printFailure(context, '--max-age must be a positive number');
-    exitWithError('--max-age must be a positive number', context);
+    failWithError(context, '--max-age must be a positive number');
   }
 
-  const config = await getStorageConfig();
-  const selectedOrg = getSelectedOrganization();
-  const finalConfig = {
-    ...config,
-    ...(selectedOrg && !config.organizationId
-      ? { organizationId: selectedOrg }
-      : {}),
-  };
+  const finalConfig = await getStorageConfigWithOrg();
 
   const { error } = await setBucketCors(name, {
     rules: reset
@@ -81,8 +64,7 @@ export default async function setCors(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   printSuccess(context, { name });

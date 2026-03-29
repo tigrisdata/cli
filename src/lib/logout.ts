@@ -1,11 +1,6 @@
 import { clearAllData } from '@auth/storage.js';
-import { exitWithError } from '@utils/exit.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { failWithError } from '@utils/exit.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 
 const context = msg('logout');
 
@@ -17,11 +12,6 @@ export default async function logout(): Promise<void> {
 
     printSuccess(context);
   } catch (error) {
-    if (error instanceof Error) {
-      printFailure(context, error.message);
-    } else {
-      printFailure(context);
-    }
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 }

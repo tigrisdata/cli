@@ -2,6 +2,7 @@ import { getStorageConfig } from '@auth/provider.js';
 import { removeBucket } from '@tigrisdata/storage';
 import {
   exitWithError,
+  failWithError,
   getSuccessNextActions,
   printNextActions,
 } from '@utils/exit.js';
@@ -28,8 +29,7 @@ export default async function deleteBucket(options: Record<string, unknown>) {
   const force = getOption<boolean>(options, ['force', 'yes', 'y']);
 
   if (!names) {
-    printFailure(context, 'Bucket name is required');
-    exitWithError('Bucket name is required', context);
+    failWithError(context, 'Bucket name is required');
   }
 
   const bucketNames = Array.isArray(names) ? names : [names];

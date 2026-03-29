@@ -1,19 +1,9 @@
 import { isFlyUser } from '@auth/fly.js';
-import { getStorageConfig } from '@auth/provider.js';
-import {
-  getCredentials,
-  getLoginMethod,
-  getSelectedOrganization,
-} from '@auth/storage.js';
+import { getStorageConfig, requireOAuthLogin } from '@auth/provider.js';
+import { getSelectedOrganization } from '@auth/storage.js';
 import { createOrganization } from '@tigrisdata/iam';
-import { exitWithError, printNextActions } from '@utils/exit.js';
-import {
-  msg,
-  printFailure,
-  printHint,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { failWithError, printNextActions } from '@utils/exit.js';
+import { msg, printHint, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 const context = msg('organizations', 'create');
@@ -21,23 +11,7 @@ const context = msg('organizations', 'create');
 export default async function create(options: Record<string, unknown>) {
   printStart(context);
 
-  // Check if logged in with OAuth (required for org creation)
-  const loginMethod = getLoginMethod();
-  if (loginMethod !== 'oauth') {
-    // Not logged in via OAuth - check if using credentials
-    if (getCredentials()) {
-      console.log(
-        'You are using access key credentials, which belong to a single organization.\n' +
-          'Organization creation is only available with OAuth login.\n\n' +
-          'Run "tigris login" to login with your Tigris account.'
-      );
-    } else {
-      console.log(
-        'Not authenticated. Please run "tigris login" to login with your Tigris account.'
-      );
-    }
-    return;
-  }
+  if (requireOAuthLogin('Organization creation')) return;
 
   // Fly users cannot create organizations
   const selectedOrg = getSelectedOrganization();
@@ -53,8 +27,7 @@ export default async function create(options: Record<string, unknown>) {
   const name = getOption<string>(options, ['name', 'N']);
 
   if (!name) {
-    printFailure(context, 'Organization name is required');
-    exitWithError('Organization name is required', context);
+    failWithError(context, 'Organization name is required');
   }
 
   const config = await getStorageConfig();
@@ -62,8 +35,7 @@ export default async function create(options: Record<string, unknown>) {
   const { data, error } = await createOrganization(name, { config });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   const id = data.id;

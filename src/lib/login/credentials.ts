@@ -8,14 +8,9 @@ import {
   storeTemporaryCredentials,
 } from '@auth/storage.js';
 import { whoami } from '@tigrisdata/iam';
-import { exitWithError, printNextActions } from '@utils/exit.js';
+import { failWithError, printNextActions } from '@utils/exit.js';
 import { requireInteractive } from '@utils/interactive.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 
 import { DEFAULT_STORAGE_ENDPOINT } from '../../constants.js';
 
@@ -77,8 +72,7 @@ export default async function credentials(options: Record<string, unknown>) {
 
   // Validate
   if (!accessKey || !accessSecret) {
-    printFailure(context, 'Access key and secret are required');
-    exitWithError('Access key and secret are required', context);
+    failWithError(context, 'Access key and secret are required');
   }
 
   // Get endpoint: configured → default

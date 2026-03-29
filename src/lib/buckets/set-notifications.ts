@@ -1,16 +1,10 @@
-import { getStorageConfig } from '@auth/provider.js';
-import { getSelectedOrganization } from '@auth/storage.js';
+import { getStorageConfigWithOrg } from '@auth/provider.js';
 import {
   type BucketNotification,
   setBucketNotifications,
 } from '@tigrisdata/storage';
-import { exitWithError } from '@utils/exit.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { failWithError } from '@utils/exit.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 const context = msg('buckets', 'set-notifications');
@@ -31,19 +25,14 @@ export default async function setNotifications(
   const reset = getOption<boolean>(options, ['reset']);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    exitWithError('Bucket name is required', context);
+    failWithError(context, 'Bucket name is required');
   }
 
   const flagCount = [enable, disable, reset].filter(Boolean).length;
   if (flagCount > 1) {
-    printFailure(
+    failWithError(
       context,
       'Only one of --enable, --disable, or --reset can be used'
-    );
-    exitWithError(
-      'Only one of --enable, --disable, or --reset can be used',
-      context
     );
   }
 
@@ -55,8 +44,7 @@ export default async function setNotifications(
       username !== undefined ||
       password !== undefined)
   ) {
-    printFailure(context, 'Cannot use --reset with other options');
-    exitWithError('Cannot use --reset with other options', context);
+    failWithError(context, 'Cannot use --reset with other options');
   }
 
   if (
@@ -69,18 +57,13 @@ export default async function setNotifications(
     username === undefined &&
     password === undefined
   ) {
-    printFailure(context, 'Provide at least one option');
-    exitWithError('Provide at least one option', context);
+    failWithError(context, 'Provide at least one option');
   }
 
   if (token && (username !== undefined || password !== undefined)) {
-    printFailure(
+    failWithError(
       context,
       'Cannot use --token with --username/--password. Choose one auth method'
-    );
-    exitWithError(
-      'Cannot use --token with --username/--password. Choose one auth method',
-      context
     );
   }
 
@@ -88,18 +71,10 @@ export default async function setNotifications(
     (username !== undefined && password === undefined) ||
     (username === undefined && password !== undefined)
   ) {
-    printFailure(context, 'Both --username and --password are required');
-    exitWithError('Both --username and --password are required', context);
+    failWithError(context, 'Both --username and --password are required');
   }
 
-  const config = await getStorageConfig();
-  const selectedOrg = getSelectedOrganization();
-  const finalConfig = {
-    ...config,
-    ...(selectedOrg && !config.organizationId
-      ? { organizationId: selectedOrg }
-      : {}),
-  };
+  const finalConfig = await getStorageConfigWithOrg();
 
   let notificationConfig: BucketNotification;
 
@@ -129,8 +104,7 @@ export default async function setNotifications(
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   printSuccess(context, { name });

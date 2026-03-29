@@ -1,14 +1,9 @@
 import { getStorageConfig } from '@auth/provider.js';
 import { getBucketInfo } from '@tigrisdata/storage';
 import { buildBucketInfo } from '@utils/bucket-info.js';
-import { exitWithError } from '@utils/exit.js';
+import { failWithError } from '@utils/exit.js';
 import { formatOutput } from '@utils/format.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 const context = msg('buckets', 'get');
@@ -23,8 +18,7 @@ export default async function get(options: Record<string, unknown>) {
     : getOption<string>(options, ['format', 'f', 'F']) || 'table';
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    exitWithError('Bucket name is required', context);
+    failWithError(context, 'Bucket name is required');
   }
 
   const { data, error } = await getBucketInfo(name, {
@@ -32,8 +26,7 @@ export default async function get(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   const info = [

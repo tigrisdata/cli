@@ -1,17 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-import { getAuthClient } from '@auth/client.js';
-import { getLoginMethod } from '@auth/provider.js';
-import { getTigrisConfig } from '@auth/provider.js';
-import { getSelectedOrganization } from '@auth/storage.js';
+import { getOAuthIAMConfig } from '@auth/iam.js';
 import { addPolicy, type PolicyDocument } from '@tigrisdata/iam';
-import { exitWithError } from '@utils/exit.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { failWithError } from '@utils/exit.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 import { parseDocument, readStdin } from './utils.js';
@@ -26,56 +18,19 @@ export default async function create(options: Record<string, unknown>) {
   const description = getOption<string>(options, ['description']) ?? '';
 
   if (!name) {
-    printFailure(context, 'Policy name is required');
-    exitWithError('Policy name is required', context);
+    failWithError(context, 'Policy name is required');
   }
 
   // Validate policy name: only alphanumeric and =,.@_- allowed
   const validNamePattern = /^[a-zA-Z0-9=,.@_-]+$/;
   if (!validNamePattern.test(name)) {
-    printFailure(
+    failWithError(
       context,
       'Invalid policy name. Only alphanumeric characters and =,.@_- are allowed.'
     );
-    exitWithError(
-      'Invalid policy name. Only alphanumeric characters and =,.@_- are allowed.',
-      context
-    );
   }
 
-  const loginMethod = await getLoginMethod();
-
-  if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Policies can only be created when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    exitWithError(
-      'Policies can only be created when logged in via OAuth.\nRun "tigris login oauth" first.',
-      context
-    );
-  }
-
-  const authClient = getAuthClient();
-  const isAuthenticated = await authClient.isAuthenticated();
-
-  if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    exitWithError(
-      'Not authenticated. Run "tigris login oauth" first.',
-      context
-    );
-  }
-
-  const accessToken = await authClient.getAccessToken();
-  const selectedOrg = getSelectedOrganization();
-  const tigrisConfig = getTigrisConfig();
-
-  const iamConfig = {
-    sessionToken: accessToken,
-    organizationId: selectedOrg ?? undefined,
-    iamEndpoint: tigrisConfig.iamEndpoint,
-  };
+  const iamConfig = await getOAuthIAMConfig(context);
 
   // Get document content
   let documentJson: string;
@@ -92,13 +47,9 @@ export default async function create(options: Record<string, unknown>) {
     // Read from stdin
     documentJson = await readStdin();
   } else {
-    printFailure(
+    failWithError(
       context,
       'Policy document is required. Provide via --document or pipe to stdin.'
-    );
-    exitWithError(
-      'Policy document is required. Provide via --document or pipe to stdin.',
-      context
     );
   }
 
@@ -107,8 +58,7 @@ export default async function create(options: Record<string, unknown>) {
   try {
     document = parseDocument(documentJson);
   } catch {
-    printFailure(context, 'Invalid JSON in policy document');
-    exitWithError('Invalid JSON in policy document', context);
+    failWithError(context, 'Invalid JSON in policy document');
   }
 
   const { data, error } = await addPolicy(name, {
@@ -118,8 +68,7 @@ export default async function create(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   printSuccess(context, { name: data.name });

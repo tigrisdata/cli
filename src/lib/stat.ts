@@ -1,14 +1,9 @@
 import { getStorageConfig } from '@auth/provider.js';
 import { getBucketInfo, getStats, head } from '@tigrisdata/storage';
 import { buildBucketInfo } from '@utils/bucket-info.js';
-import { exitWithError } from '@utils/exit.js';
+import { failWithError } from '@utils/exit.js';
 import { formatOutput, formatSize } from '@utils/format.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 import { parseAnyPath } from '@utils/path.js';
 
@@ -34,8 +29,7 @@ export default async function stat(options: Record<string, unknown>) {
     const { data, error } = await getStats({ config });
 
     if (error) {
-      printFailure(context, error.message);
-      exitWithError(error, context);
+      failWithError(context, error);
     }
 
     const stats = [
@@ -64,8 +58,7 @@ export default async function stat(options: Record<string, unknown>) {
   const { bucket, path } = parseAnyPath(pathString);
 
   if (!bucket) {
-    printFailure(context, 'Invalid path');
-    exitWithError('Invalid path', context);
+    failWithError(context, 'Invalid path');
   }
 
   // Bucket only (no path or just trailing slash): show bucket info
@@ -73,8 +66,7 @@ export default async function stat(options: Record<string, unknown>) {
     const { data, error } = await getBucketInfo(bucket, { config });
 
     if (error) {
-      printFailure(context, error.message);
-      exitWithError(error, context);
+      failWithError(context, error);
     }
 
     const info = buildBucketInfo(data).map(({ label, value }) => ({
@@ -102,13 +94,11 @@ export default async function stat(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   if (!data) {
-    printFailure(context, 'Object not found');
-    exitWithError('Object not found', context);
+    failWithError(context, 'Object not found');
   }
 
   const info = [

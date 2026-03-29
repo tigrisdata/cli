@@ -6,8 +6,8 @@ import {
   getSelectedOrganization,
 } from '@auth/storage.js';
 import { listOrganizations } from '@tigrisdata/iam';
-import { exitWithError } from '@utils/exit.js';
-import { msg, printAlreadyDone, printFailure } from '@utils/messages.js';
+import { failWithError } from '@utils/exit.js';
+import { msg, printAlreadyDone } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 const context = msg('whoami');
@@ -64,8 +64,7 @@ export default async function whoami(
       const { data, error } = await listOrganizations({ config });
 
       if (error) {
-        printFailure(context, error.message);
-        exitWithError(error, context);
+        failWithError(context, error);
       }
 
       organizations = data?.organizations ?? [];
@@ -117,11 +116,6 @@ export default async function whoami(
     lines.push('');
     console.log(lines.join('\n'));
   } catch (error) {
-    if (error instanceof Error) {
-      printFailure(context, error.message);
-    } else {
-      printFailure(context);
-    }
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 }

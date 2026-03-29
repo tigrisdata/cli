@@ -2,25 +2,16 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { getAuthClient } from '@auth/client.js';
-import { getLoginMethod } from '@auth/provider.js';
-import { getTigrisConfig } from '@auth/provider.js';
-import { getSelectedOrganization } from '@auth/storage.js';
+import { getOAuthIAMConfig } from '@auth/iam.js';
 import {
   editPolicy,
   getPolicy,
   listPolicies,
   type PolicyDocument,
 } from '@tigrisdata/iam';
-import { exitWithError } from '@utils/exit.js';
+import { failWithError } from '@utils/exit.js';
 import { requireInteractive } from '@utils/interactive.js';
-import {
-  msg,
-  printEmpty,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 import { parseDocument, readStdin } from './utils.js';
@@ -34,51 +25,15 @@ export default async function edit(options: Record<string, unknown>) {
   const documentArg = getOption<string>(options, ['document', 'd']);
   const description = getOption<string>(options, ['description']);
 
-  const loginMethod = await getLoginMethod();
-
-  if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Policies can only be edited when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    exitWithError(
-      'Policies can only be edited when logged in via OAuth.\nRun "tigris login oauth" first.',
-      context
-    );
-  }
-
-  const authClient = getAuthClient();
-  const isAuthenticated = await authClient.isAuthenticated();
-
-  if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    exitWithError(
-      'Not authenticated. Run "tigris login oauth" first.',
-      context
-    );
-  }
-
-  const accessToken = await authClient.getAccessToken();
-  const selectedOrg = getSelectedOrganization();
-  const tigrisConfig = getTigrisConfig();
-
-  const iamConfig = {
-    sessionToken: accessToken,
-    organizationId: selectedOrg ?? undefined,
-    iamEndpoint: tigrisConfig.iamEndpoint,
-  };
+  const iamConfig = await getOAuthIAMConfig(context);
 
   // If no resource provided, list policies and let user select
   // But if stdin is piped, we can't use interactive selection
   if (!resource) {
     if (!process.stdin.isTTY) {
-      printFailure(
+      failWithError(
         context,
         'Policy ARN is required when piping document via stdin.'
-      );
-      exitWithError(
-        'Policy ARN is required when piping document via stdin.',
-        context
       );
     }
 
@@ -87,8 +42,7 @@ export default async function edit(options: Record<string, unknown>) {
     });
 
     if (listError) {
-      printFailure(context, listError.message);
-      exitWithError(listError, context);
+      failWithError(context, listError);
     }
 
     if (!listData.policies || listData.policies.length === 0) {
@@ -126,8 +80,7 @@ export default async function edit(options: Record<string, unknown>) {
     try {
       newDocument = parseDocument(documentJson);
     } catch {
-      printFailure(context, 'Invalid JSON in policy document');
-      exitWithError('Invalid JSON in policy document', context);
+      failWithError(context, 'Invalid JSON in policy document');
     }
   } else if (!process.stdin.isTTY && !description) {
     // Read from stdin only if no description provided (description-only update doesn't need stdin)
@@ -135,14 +88,12 @@ export default async function edit(options: Record<string, unknown>) {
     try {
       newDocument = parseDocument(documentJson);
     } catch {
-      printFailure(context, 'Invalid JSON in policy document');
-      exitWithError('Invalid JSON in policy document', context);
+      failWithError(context, 'Invalid JSON in policy document');
     }
   }
 
   if (!newDocument && !description) {
-    printFailure(context, 'Either --document or --description is required.');
-    exitWithError('Either --document or --description is required.', context);
+    failWithError(context, 'Either --document or --description is required.');
   }
 
   // Fetch existing policy to fill in missing values
@@ -151,8 +102,7 @@ export default async function edit(options: Record<string, unknown>) {
   });
 
   if (getError) {
-    printFailure(context, getError.message);
-    exitWithError(getError, context);
+    failWithError(context, getError);
   }
 
   const { data, error } = await editPolicy(resource, {
@@ -162,8 +112,7 @@ export default async function edit(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   printSuccess(context, { resource: data.resource });

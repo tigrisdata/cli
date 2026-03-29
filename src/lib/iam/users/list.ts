@@ -1,23 +1,13 @@
-import { getAuthClient } from '@auth/client.js';
-import { isFlyUser } from '@auth/fly.js';
-import { getLoginMethod } from '@auth/provider.js';
-import { getTigrisConfig } from '@auth/provider.js';
-import { getSelectedOrganization } from '@auth/storage.js';
+import { getOAuthIAMConfig, isFlyOrganization } from '@auth/iam.js';
 import { listUsers } from '@tigrisdata/iam';
-import { exitWithError } from '@utils/exit.js';
+import { failWithError } from '@utils/exit.js';
 import {
   formatJson,
   formatTable,
   formatXml,
   type TableColumn,
 } from '@utils/format.js';
-import {
-  msg,
-  printEmpty,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 const context = msg('iam users', 'list');
@@ -30,56 +20,16 @@ export default async function list(options: Record<string, unknown>) {
     ? 'json'
     : getOption<string>(options, ['format', 'f', 'F'], 'table');
 
-  const loginMethod = await getLoginMethod();
+  if (isFlyOrganization()) return;
 
-  if (loginMethod !== 'oauth') {
-    printFailure(
-      context,
-      'Users can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.'
-    );
-    exitWithError(
-      'Users can only be listed when logged in via OAuth.\nRun "tigris login oauth" first.',
-      context
-    );
-  }
-
-  const selectedOrg = getSelectedOrganization();
-
-  if (isFlyUser(selectedOrg ?? undefined)) {
-    console.log(
-      'User management is not available for Fly.io organizations.\n' +
-        'Your users are managed through Fly.io.\n\n' +
-        'Visit https://fly.io to manage your organization members.'
-    );
-    return;
-  }
-
-  const authClient = getAuthClient();
-  const isAuthenticated = await authClient.isAuthenticated();
-
-  if (!isAuthenticated) {
-    printFailure(context, 'Not authenticated. Run "tigris login oauth" first.');
-    exitWithError(
-      'Not authenticated. Run "tigris login oauth" first.',
-      context
-    );
-  }
-
-  const accessToken = await authClient.getAccessToken();
-  const tigrisConfig = getTigrisConfig();
+  const iamConfig = await getOAuthIAMConfig(context);
 
   const { data, error } = await listUsers({
-    config: {
-      sessionToken: accessToken,
-      organizationId: selectedOrg ?? undefined,
-      iamEndpoint: tigrisConfig.iamEndpoint,
-      mgmtEndpoint: tigrisConfig.mgmtEndpoint,
-    },
+    config: iamConfig,
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   const users = data.users.map((user) => ({

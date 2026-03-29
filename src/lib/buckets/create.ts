@@ -2,18 +2,13 @@ import { getStorageConfig } from '@auth/provider.js';
 import type { BucketLocations, StorageClass } from '@tigrisdata/storage';
 import { createBucket } from '@tigrisdata/storage';
 import {
-  exitWithError,
+  failWithError,
   getSuccessNextActions,
   printNextActions,
 } from '@utils/exit.js';
 import { requireInteractive } from '@utils/interactive.js';
 import { parseLocations, promptLocations } from '@utils/locations.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 import { buildPromptChoices, getArgumentSpec } from '@utils/specs.js';
 import enquirer from 'enquirer';
@@ -134,19 +129,16 @@ export default async function create(options: Record<string, unknown>) {
     try {
       parsedLocations = await promptLocations();
     } catch (err) {
-      printFailure(context, (err as Error).message);
-      exitWithError(err, context);
+      failWithError(context, err);
     }
   }
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    exitWithError('Bucket name is required', context);
+    failWithError(context, 'Bucket name is required');
   }
 
   if (sourceSnapshot && !forkOf) {
-    printFailure(context, '--source-snapshot requires --fork-of');
-    exitWithError('--source-snapshot requires --fork-of', context);
+    failWithError(context, '--source-snapshot requires --fork-of');
   }
 
   const { error } = await createBucket(name, {
@@ -160,8 +152,7 @@ export default async function create(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   if (format === 'json') {

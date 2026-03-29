@@ -1,12 +1,7 @@
 import { getStorageConfig } from '@auth/provider.js';
 import { createBucketSnapshot } from '@tigrisdata/storage';
-import { exitWithError } from '@utils/exit.js';
-import {
-  msg,
-  printFailure,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { failWithError } from '@utils/exit.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
 
 const context = msg('snapshots', 'take');
@@ -21,8 +16,7 @@ export default async function take(options: Record<string, unknown>) {
   ]);
 
   if (!name) {
-    printFailure(context, 'Bucket name is required');
-    exitWithError('Bucket name is required', context);
+    failWithError(context, 'Bucket name is required');
   }
 
   const config = await getStorageConfig();
@@ -33,8 +27,7 @@ export default async function take(options: Record<string, unknown>) {
   });
 
   if (error) {
-    printFailure(context, error.message);
-    exitWithError(error, context);
+    failWithError(context, error);
   }
 
   printSuccess(context, {
