@@ -1,20 +1,20 @@
-import { createOrganization } from '@tigrisdata/iam';
-import { getOption } from '../../utils/options.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
+import { isFlyUser } from '@auth/fly.js';
+import { getStorageConfig } from '@auth/provider.js';
 import {
-  getLoginMethod,
   getCredentials,
+  getLoginMethod,
   getSelectedOrganization,
-} from '../../auth/storage.js';
-import { isFlyUser } from '../../auth/fly.js';
+} from '@auth/storage.js';
+import { createOrganization } from '@tigrisdata/iam';
+import { exitWithError, printNextActions } from '@utils/exit.js';
 import {
-  printStart,
-  printSuccess,
+  msg,
   printFailure,
   printHint,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError, printNextActions } from '../../utils/exit.js';
+  printStart,
+  printSuccess,
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
 
 const context = msg('organizations', 'create');
 

@@ -1,18 +1,18 @@
-import { getOption } from '../../utils/options.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
+import { getStorageConfig } from '@auth/provider.js';
 import { remove } from '@tigrisdata/storage';
-import {
-  printStart,
-  printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
 import {
   exitWithError,
   getSuccessNextActions,
   printNextActions,
-} from '../../utils/exit.js';
-import { requireInteractive, confirm } from '../../utils/interactive.js';
+} from '@utils/exit.js';
+import { confirm, requireInteractive } from '@utils/interactive.js';
+import {
+  msg,
+  printFailure,
+  printStart,
+  printSuccess,
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
 
 const context = msg('objects', 'delete');
 

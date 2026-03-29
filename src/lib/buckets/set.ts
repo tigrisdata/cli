@@ -1,15 +1,15 @@
-import { getOption, parseBoolean } from '../../utils/options.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
-import { getSelectedOrganization } from '../../auth/storage.js';
+import { getStorageConfig } from '@auth/provider.js';
+import { getSelectedOrganization } from '@auth/storage.js';
 import { updateBucket, type UpdateBucketOptions } from '@tigrisdata/storage';
-import { parseLocations } from '../../utils/locations.js';
+import { exitWithError } from '@utils/exit.js';
+import { parseLocations } from '@utils/locations.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError } from '../../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption, parseBoolean } from '@utils/options.js';
 
 const context = msg('buckets', 'set');
 

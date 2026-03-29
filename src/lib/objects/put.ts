@@ -1,17 +1,17 @@
-import { createReadStream, statSync } from 'fs';
-import { Readable } from 'stream';
-import { getOption } from '../../utils/options.js';
-import { formatOutput, formatSize } from '../../utils/format.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
+import { getStorageConfig } from '@auth/provider.js';
 import { put } from '@tigrisdata/storage';
+import { exitWithError, printNextActions } from '@utils/exit.js';
+import { formatOutput, formatSize } from '@utils/format.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError, printNextActions } from '../../utils/exit.js';
-import { calculateUploadParams } from '../../utils/upload.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
+import { calculateUploadParams } from '@utils/upload.js';
+import { createReadStream, statSync } from 'fs';
+import { Readable } from 'stream';
 
 const context = msg('objects', 'put');
 

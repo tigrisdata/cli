@@ -1,18 +1,18 @@
-import { listOrganizations } from '@tigrisdata/iam';
-import { getOption } from '../../utils/options.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
+import { getStorageConfig } from '@auth/provider.js';
 import {
-  storeSelectedOrganization,
-  getLoginMethod,
   getCredentials,
-} from '../../auth/storage.js';
+  getLoginMethod,
+  storeSelectedOrganization,
+} from '@auth/storage.js';
+import { listOrganizations } from '@tigrisdata/iam';
+import { exitWithError, printNextActions } from '@utils/exit.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError, printNextActions } from '../../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
 
 const context = msg('organizations', 'select');
 

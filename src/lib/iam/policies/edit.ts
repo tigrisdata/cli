@@ -1,27 +1,29 @@
 import { existsSync, readFileSync } from 'node:fs';
+
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { requireInteractive } from '../../../utils/interactive.js';
-import { getOption } from '../../../utils/options.js';
-import { getLoginMethod } from '../../../auth/s3-client.js';
-import { getAuthClient } from '../../../auth/client.js';
-import { getSelectedOrganization } from '../../../auth/storage.js';
-import { getTigrisConfig } from '../../../auth/config.js';
+import { getAuthClient } from '@auth/client.js';
+import { getLoginMethod } from '@auth/provider.js';
+import { getTigrisConfig } from '@auth/provider.js';
+import { getSelectedOrganization } from '@auth/storage.js';
 import {
   editPolicy,
   getPolicy,
   listPolicies,
   type PolicyDocument,
 } from '@tigrisdata/iam';
+import { exitWithError } from '@utils/exit.js';
+import { requireInteractive } from '@utils/interactive.js';
 import {
+  msg,
+  printEmpty,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
-  msg,
-} from '../../../utils/messages.js';
-import { exitWithError } from '../../../utils/exit.js';
-import { readStdin, parseDocument } from './utils.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
+
+import { parseDocument, readStdin } from './utils.js';
 
 const context = msg('iam policies', 'edit');
 

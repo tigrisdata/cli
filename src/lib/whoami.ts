@@ -1,14 +1,14 @@
-import { listOrganizations } from '@tigrisdata/iam';
-import { getAuthClient } from '../auth/client.js';
+import { getAuthClient } from '@auth/client.js';
+import { getStorageConfig } from '@auth/provider.js';
 import {
-  getSelectedOrganization,
-  getLoginMethod,
   getCredentials,
-} from '../auth/storage.js';
-import { getStorageConfig } from '../auth/s3-client.js';
-import { printFailure, printAlreadyDone, msg } from '../utils/messages.js';
-import { exitWithError } from '../utils/exit.js';
-import { getOption } from '../utils/options.js';
+  getLoginMethod,
+  getSelectedOrganization,
+} from '@auth/storage.js';
+import { listOrganizations } from '@tigrisdata/iam';
+import { exitWithError } from '@utils/exit.js';
+import { msg, printAlreadyDone, printFailure } from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
 
 const context = msg('whoami');
 

@@ -1,22 +1,22 @@
-import { getOption } from '../../utils/options';
-import enquirer from 'enquirer';
-import { requireInteractive } from '../../utils/interactive.js';
-import { getArgumentSpec, buildPromptChoices } from '../../utils/specs.js';
-import { StorageClass, createBucket } from '@tigrisdata/storage';
-import { getStorageConfig } from '../../auth/s3-client';
-import { parseLocations, promptLocations } from '../../utils/locations.js';
-import type { BucketLocations } from '@tigrisdata/storage';
-import {
-  printStart,
-  printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
+import { getStorageConfig } from '@auth/provider.js';
+import type { BucketLocations, StorageClass } from '@tigrisdata/storage';
+import { createBucket } from '@tigrisdata/storage';
 import {
   exitWithError,
   getSuccessNextActions,
   printNextActions,
-} from '../../utils/exit.js';
+} from '@utils/exit.js';
+import { requireInteractive } from '@utils/interactive.js';
+import { parseLocations, promptLocations } from '@utils/locations.js';
+import {
+  msg,
+  printFailure,
+  printStart,
+  printSuccess,
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
+import { buildPromptChoices, getArgumentSpec } from '@utils/specs.js';
+import enquirer from 'enquirer';
 
 const { prompt } = enquirer;
 

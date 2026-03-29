@@ -1,16 +1,16 @@
-import { parseAnyPath } from '../utils/path.js';
-import { getOption } from '../utils/options.js';
-import { formatOutput, formatSize } from '../utils/format.js';
-import { getStorageConfig } from '../auth/s3-client.js';
-import { getStats, getBucketInfo, head } from '@tigrisdata/storage';
+import { getStorageConfig } from '@auth/provider.js';
+import { getBucketInfo, getStats, head } from '@tigrisdata/storage';
+import { buildBucketInfo } from '@utils/bucket-info.js';
+import { exitWithError } from '@utils/exit.js';
+import { formatOutput, formatSize } from '@utils/format.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../utils/messages.js';
-import { buildBucketInfo } from '../utils/bucket-info.js';
-import { exitWithError } from '../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
+import { parseAnyPath } from '@utils/path.js';
 
 const context = msg('stat');
 

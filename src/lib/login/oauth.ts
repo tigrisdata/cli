@@ -1,14 +1,14 @@
-import { getAuthClient } from '../../auth/client.js';
-import { storeSelectedOrganization } from '../../auth/storage.js';
+import { getAuthClient } from '@auth/client.js';
+import { storeSelectedOrganization } from '@auth/storage.js';
+import { exitWithError, printNextActions } from '@utils/exit.js';
 import {
+  msg,
+  printAlreadyDone,
+  printFailure,
+  printHint,
   printStart,
   printSuccess,
-  printFailure,
-  printAlreadyDone,
-  printHint,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError, printNextActions } from '../../utils/exit.js';
+} from '@utils/messages.js';
 
 const context = msg('login', 'oauth');
 

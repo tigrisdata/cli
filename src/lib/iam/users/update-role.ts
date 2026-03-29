@@ -1,21 +1,21 @@
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { requireInteractive } from '../../../utils/interactive.js';
-import { getOption } from '../../../utils/options.js';
-import { getLoginMethod } from '../../../auth/s3-client.js';
-import { getAuthClient } from '../../../auth/client.js';
-import { getSelectedOrganization } from '../../../auth/storage.js';
-import { getTigrisConfig } from '../../../auth/config.js';
-import { isFlyUser } from '../../../auth/fly.js';
-import { updateUserRole, listUsers } from '@tigrisdata/iam';
+import { getAuthClient } from '@auth/client.js';
+import { isFlyUser } from '@auth/fly.js';
+import { getLoginMethod } from '@auth/provider.js';
+import { getTigrisConfig } from '@auth/provider.js';
+import { getSelectedOrganization } from '@auth/storage.js';
+import { listUsers, updateUserRole } from '@tigrisdata/iam';
+import { exitWithError } from '@utils/exit.js';
+import { requireInteractive } from '@utils/interactive.js';
 import {
+  msg,
+  printEmpty,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
-  msg,
-} from '../../../utils/messages.js';
-import { exitWithError } from '../../../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
 
 const context = msg('iam users', 'update-role');
 

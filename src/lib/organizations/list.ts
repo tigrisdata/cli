@@ -1,25 +1,25 @@
-import { listOrganizations } from '@tigrisdata/iam';
-import { getOption } from '../../utils/options.js';
-import { formatOutput } from '../../utils/format.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
+import { getAuthClient } from '@auth/client.js';
+import { fetchOrganizationsFromUserInfo, isFlyUser } from '@auth/fly.js';
+import { getStorageConfig } from '@auth/provider.js';
 import {
-  storeSelectedOrganization,
-  getSelectedOrganization,
-  getLoginMethod,
   getCredentials,
-} from '../../auth/storage.js';
-import { getAuthClient } from '../../auth/client.js';
-import { isFlyUser, fetchOrganizationsFromUserInfo } from '../../auth/fly.js';
-import Enquirer from 'enquirer';
-import { requireInteractive } from '../../utils/interactive.js';
+  getLoginMethod,
+  getSelectedOrganization,
+  storeSelectedOrganization,
+} from '@auth/storage.js';
+import { listOrganizations } from '@tigrisdata/iam';
+import { exitWithError } from '@utils/exit.js';
+import { formatOutput } from '@utils/format.js';
+import { requireInteractive } from '@utils/interactive.js';
 import {
+  msg,
+  printEmpty,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  printEmpty,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError } from '../../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
+import Enquirer from 'enquirer';
 
 const context = msg('organizations', 'list');
 

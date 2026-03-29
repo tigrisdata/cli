@@ -1,19 +1,23 @@
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
-import { requireInteractive } from '../../utils/interactive.js';
+import { getTigrisConfig } from '@auth/provider.js';
 import {
-  getSavedCredentials,
+  getStoredCredentials,
+  storeCredentialOrganization,
   storeLoginMethod,
   storeTemporaryCredentials,
-} from '../../auth/storage.js';
-import { DEFAULT_STORAGE_ENDPOINT } from '../../constants.js';
+} from '@auth/storage.js';
+import { whoami } from '@tigrisdata/iam';
+import { exitWithError, printNextActions } from '@utils/exit.js';
+import { requireInteractive } from '@utils/interactive.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError, printNextActions } from '../../utils/exit.js';
+} from '@utils/messages.js';
+
+import { DEFAULT_STORAGE_ENDPOINT } from '../../constants.js';
 
 const context = msg('login', 'credentials');
 
@@ -78,7 +82,7 @@ export default async function credentials(options: Record<string, unknown>) {
   }
 
   // Get endpoint: configured → default
-  const configuredCreds = getSavedCredentials();
+  const configuredCreds = getStoredCredentials();
   const endpoint = configuredCreds?.endpoint || DEFAULT_STORAGE_ENDPOINT;
 
   // Store as temporary credentials (cleared on logout)
@@ -89,6 +93,24 @@ export default async function credentials(options: Record<string, unknown>) {
   });
 
   await storeLoginMethod('credentials');
+
+  // Fetch and store organizationId from whoami (best-effort)
+  try {
+    const tigrisConfig = getTigrisConfig();
+    const { data } = await whoami({
+      config: {
+        accessKeyId: accessKey as string,
+        secretAccessKey: accessSecret as string,
+        iamEndpoint: tigrisConfig.iamEndpoint,
+      },
+    });
+    if (data?.organizationId) {
+      await storeCredentialOrganization(data.organizationId);
+    }
+  } catch {
+    // Non-fatal — org will just be missing
+  }
+
   printSuccess(context);
   printNextActions(context);
 }

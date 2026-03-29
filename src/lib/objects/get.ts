@@ -1,17 +1,17 @@
-import { createWriteStream, writeFileSync } from 'fs';
-import { Readable } from 'stream';
-import { pipeline } from 'stream/promises';
-import { extname } from 'path';
-import { getOption } from '../../utils/options.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
+import { getStorageConfig } from '@auth/provider.js';
 import { get } from '@tigrisdata/storage';
+import { exitWithError } from '@utils/exit.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError } from '../../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
+import { createWriteStream, writeFileSync } from 'fs';
+import { extname } from 'path';
+import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
 
 const context = msg('objects', 'get');
 

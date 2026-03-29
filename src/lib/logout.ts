@@ -1,11 +1,11 @@
-import { clearAllData } from '../auth/storage.js';
+import { clearAllData } from '@auth/storage.js';
+import { exitWithError } from '@utils/exit.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../utils/messages.js';
-import { exitWithError } from '../utils/exit.js';
+} from '@utils/messages.js';
 
 const context = msg('logout');
 

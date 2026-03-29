@@ -1,15 +1,15 @@
-import { getOption } from '../../utils/options.js';
-import { formatOutput } from '../../utils/format.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
+import { getStorageConfig } from '@auth/provider.js';
 import { getBucketInfo } from '@tigrisdata/storage';
+import { buildBucketInfo } from '@utils/bucket-info.js';
+import { exitWithError } from '@utils/exit.js';
+import { formatOutput } from '@utils/format.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
-import { buildBucketInfo } from '../../utils/bucket-info.js';
-import { exitWithError } from '../../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
 
 const context = msg('buckets', 'get');
 

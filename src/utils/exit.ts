@@ -1,8 +1,8 @@
-import { classifyError } from './errors.js';
 import type { NextAction } from '../types.js';
-import { getCommandSpec } from './specs.js';
-import { interpolate } from './messages.js';
+import { classifyError } from './errors.js';
 import type { MessageContext, MessageVariables } from './messages.js';
+import { interpolate } from './messages.js';
+import { getCommandSpec } from './specs.js';
 
 function isJsonMode(): boolean {
   return globalThis.__TIGRIS_JSON_MODE === true;

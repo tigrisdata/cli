@@ -1,9 +1,9 @@
-import { parseAnyPath } from '../utils/path.js';
-import { getOption } from '../utils/options.js';
-import { getStorageConfig } from '../auth/s3-client.js';
+import { getStorageConfig } from '@auth/provider.js';
 import { createBucket, put, type StorageClass } from '@tigrisdata/storage';
-import { parseLocations } from '../utils/locations.js';
-import { exitWithError } from '../utils/exit.js';
+import { exitWithError } from '@utils/exit.js';
+import { parseLocations } from '@utils/locations.js';
+import { getOption } from '@utils/options.js';
+import { parseAnyPath } from '@utils/path.js';
 
 export default async function mk(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);

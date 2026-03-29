@@ -2,10 +2,11 @@
  * Shared CLI core functionality used by both cli.ts (npm) and cli-binary.ts (binary)
  */
 
+import { exitWithError } from '@utils/exit.js';
+import { printDeprecated } from '@utils/messages.js';
 import { Command as CommanderCommand } from 'commander';
+
 import type { Argument, CommandSpec, Specs } from './types.js';
-import { printDeprecated } from './utils/messages.js';
-import { exitWithError } from './utils/exit.js';
 
 export interface ModuleLoader {
   (commandPath: string[]): Promise<{

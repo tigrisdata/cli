@@ -1,17 +1,17 @@
-import { getOption } from '../../utils/options.js';
-import { getStorageConfig } from '../../auth/s3-client.js';
-import { getSelectedOrganization } from '../../auth/storage.js';
+import { getStorageConfig } from '@auth/provider.js';
+import { getSelectedOrganization } from '@auth/storage.js';
 import {
-  setBucketNotifications,
   type BucketNotification,
+  setBucketNotifications,
 } from '@tigrisdata/storage';
+import { exitWithError } from '@utils/exit.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError } from '../../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
 
 const context = msg('buckets', 'set-notifications');
 

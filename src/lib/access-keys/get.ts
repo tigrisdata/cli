@@ -1,16 +1,16 @@
-import { getOption } from '../../utils/options.js';
-import { getLoginMethod } from '../../auth/s3-client.js';
-import { getAuthClient } from '../../auth/client.js';
-import { getSelectedOrganization } from '../../auth/storage.js';
-import { getTigrisConfig } from '../../auth/config.js';
 import { getAccessKey } from '@tigrisdata/iam';
+import { exitWithError } from '@utils/exit.js';
 import {
+  msg,
+  printFailure,
   printStart,
   printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
-import { exitWithError } from '../../utils/exit.js';
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
+
+import { getAuthClient } from '@auth/client.js';
+import { getLoginMethod, getTigrisConfig } from '@auth/provider.js';
+import { getSelectedOrganization } from '@auth/storage.js';
 
 const context = msg('access-keys', 'get');
 

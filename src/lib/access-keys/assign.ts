@@ -1,20 +1,20 @@
-import { getOption } from '../../utils/options.js';
-import { getLoginMethod } from '../../auth/s3-client.js';
-import { getAuthClient } from '../../auth/client.js';
-import { getSelectedOrganization } from '../../auth/storage.js';
-import { getTigrisConfig } from '../../auth/config.js';
 import { assignBucketRoles, revokeAllBucketRoles } from '@tigrisdata/iam';
-import {
-  printStart,
-  printSuccess,
-  printFailure,
-  msg,
-} from '../../utils/messages.js';
 import {
   exitWithError,
   getSuccessNextActions,
   printNextActions,
-} from '../../utils/exit.js';
+} from '@utils/exit.js';
+import {
+  msg,
+  printFailure,
+  printStart,
+  printSuccess,
+} from '@utils/messages.js';
+import { getOption } from '@utils/options.js';
+
+import { getAuthClient } from '@auth/client.js';
+import { getLoginMethod, getTigrisConfig } from '@auth/provider.js';
+import { getSelectedOrganization } from '@auth/storage.js';
 
 const context = msg('access-keys', 'assign');
 
