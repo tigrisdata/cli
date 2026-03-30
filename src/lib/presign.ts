@@ -60,7 +60,7 @@ export default async function presign(options: Record<string, unknown>) {
     }
 
     if (selectFlag) {
-      accessKeyId = await resolveAccessKeyWithPrompt(bucket);
+      accessKeyId = await resolveAccessKeyWithPrompt(bucket, method);
     } else {
       accessKeyId = await resolveAccessKeyAuto(bucket, method);
     }
@@ -130,7 +130,7 @@ async function fetchAccessKeys(): Promise<AccessKey[]> {
   return data.accessKeys;
 }
 
-function keyMatchesOperation(
+export function keyMatchesOperation(
   key: AccessKey,
   targetBucket: string,
   method: string
@@ -183,7 +183,8 @@ async function resolveAccessKeyAuto(
 }
 
 async function resolveAccessKeyWithPrompt(
-  targetBucket: string
+  targetBucket: string,
+  method: string
 ): Promise<string> {
   if (!process.stdin.isTTY) {
     exitWithError(
@@ -192,12 +193,17 @@ async function resolveAccessKeyWithPrompt(
   }
 
   const keys = await fetchAccessKeys();
+  const activeKeys = keys.filter((key) => key.status === 'active');
 
-  // Filter to active keys that have access to the target bucket
-  const matchingKeys = keys.filter(
-    (key) =>
-      key.status === 'active' &&
-      key.roles?.some((r) => r.bucket === targetBucket || r.bucket === '*')
+  if (activeKeys.length === 0) {
+    exitWithError(
+      'No active access keys found. Create one with "tigris access-keys create <name>"'
+    );
+  }
+
+  // Filter to active keys that match the operation
+  const matchingKeys = activeKeys.filter((key) =>
+    keyMatchesOperation(key, targetBucket, method)
   );
 
   let candidates: AccessKey[];
@@ -206,14 +212,6 @@ async function resolveAccessKeyWithPrompt(
     candidates = matchingKeys;
   } else {
     // Fall back to all active keys with a warning
-    const activeKeys = keys.filter((key) => key.status === 'active');
-
-    if (activeKeys.length === 0) {
-      exitWithError(
-        'No active access keys found. Create one with "tigris access-keys create <name>"'
-      );
-    }
-
     console.error(
       `No access keys with explicit access to bucket "${targetBucket}" found. Showing all active keys.`
     );
