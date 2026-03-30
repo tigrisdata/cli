@@ -3,7 +3,7 @@ import { get, head, list, put } from '@tigrisdata/storage';
 import { executeWithConcurrency } from '@utils/concurrency.js';
 import { exitWithError } from '@utils/exit.js';
 import { formatSize } from '@utils/format.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import {
   globToRegex,
   isPathFolder,
@@ -854,10 +854,7 @@ export default async function cp(options: Record<string, unknown>) {
   }
 
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
-  const jsonFlag = getOption<boolean>(options, ['json']);
-  const format = jsonFlag
-    ? 'json'
-    : getOption<string>(options, ['format'], 'table');
+  const format = getFormat(options);
   _jsonMode = format === 'json';
 
   const direction = detectDirection(src, dest);

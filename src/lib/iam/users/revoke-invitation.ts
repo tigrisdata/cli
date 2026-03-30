@@ -5,7 +5,7 @@ import { listUsers, revokeInvitation as revokeInv } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { confirm, requireInteractive } from '@utils/interactive.js';
 import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('iam users', 'revoke-invitation');
 
@@ -14,8 +14,10 @@ export default async function revokeInvitation(
 ) {
   printStart(context);
 
+  const format = getFormat(options);
+
   const resourceOption = getOption<string | string[]>(options, ['resource']);
-  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
+  const force = getOption<boolean>(options, ['yes', 'y']);
 
   if (isFlyOrganization()) return;
 
@@ -75,6 +77,10 @@ export default async function revokeInvitation(
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'revoked', invitations: resources }));
   }
 
   printSuccess(context);

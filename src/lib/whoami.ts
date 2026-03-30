@@ -8,7 +8,7 @@ import {
 import { listOrganizations } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { msg, printAlreadyDone } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat } from '@utils/options.js';
 
 const context = msg('whoami');
 
@@ -16,10 +16,7 @@ export default async function whoami(
   options: Record<string, unknown> = {}
 ): Promise<void> {
   try {
-    const json = getOption<boolean>(options, ['json']);
-    const format = json
-      ? 'json'
-      : getOption<string>(options, ['format', 'f', 'F'], 'table');
+    const format = getFormat(options);
     const loginMethod = getLoginMethod();
     const credentials = getCredentials();
 

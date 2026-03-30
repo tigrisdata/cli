@@ -3,7 +3,7 @@ import { put } from '@tigrisdata/storage';
 import { failWithError, printNextActions } from '@utils/exit.js';
 import { formatOutput, formatSize } from '@utils/format.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import { calculateUploadParams } from '@utils/upload.js';
 import { createReadStream, statSync } from 'fs';
 import { Readable } from 'stream';
@@ -23,10 +23,7 @@ export default async function putObject(options: Record<string, unknown>) {
     't',
     'T',
   ]);
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   if (!bucket) {
     failWithError(context, 'Bucket name is required');

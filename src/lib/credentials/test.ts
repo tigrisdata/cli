@@ -8,17 +8,14 @@ import {
   printStart,
   printSuccess,
 } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('credentials', 'test');
 
 export default async function test(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   const bucket = getOption<string>(options, ['bucket', 'b']);
 

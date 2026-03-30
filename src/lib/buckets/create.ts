@@ -9,7 +9,7 @@ import {
 import { requireInteractive } from '@utils/interactive.js';
 import { parseLocations, promptLocations } from '@utils/locations.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import { buildPromptChoices, getArgumentSpec } from '@utils/specs.js';
 import enquirer from 'enquirer';
 
@@ -20,10 +20,7 @@ const context = msg('buckets', 'create');
 export default async function create(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   let name = getOption<string>(options, ['name']);
   const isPublic = getOption<boolean>(options, ['public']);

@@ -2,12 +2,14 @@ import { getOAuthIAMConfig, isFlyOrganization } from '@auth/iam.js';
 import { inviteUser } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('iam users', 'invite');
 
 export default async function invite(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   if (isFlyOrganization()) return;
 
@@ -46,6 +48,12 @@ export default async function invite(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(
+      JSON.stringify({ action: 'invited', email: emails.join(', ') })
+    );
   }
 
   printSuccess(context, { email: emails.join(', ') });

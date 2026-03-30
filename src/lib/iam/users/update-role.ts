@@ -5,12 +5,14 @@ import { listUsers, updateUserRole } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { requireInteractive } from '@utils/interactive.js';
 import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('iam users', 'update-role');
 
 export default async function updateRole(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   if (isFlyOrganization()) return;
 
@@ -96,6 +98,10 @@ export default async function updateRole(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'updated', users: roleUpdates }));
   }
 
   printSuccess(context);

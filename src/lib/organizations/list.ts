@@ -10,7 +10,7 @@ import { failWithError } from '@utils/exit.js';
 import { formatOutput } from '@utils/format.js';
 import { requireInteractive } from '@utils/interactive.js';
 import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat } from '@utils/options.js';
 import Enquirer from 'enquirer';
 
 const context = msg('organizations', 'list');
@@ -20,10 +20,7 @@ export default async function list(options: Record<string, unknown>) {
 
   if (requireOAuthLogin('Organization listing and selection')) return;
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'select');
+  const format = getFormat(options, 'select');
 
   // For Fly users, fetch organizations from userinfo endpoint
   const authClient = getAuthClient();

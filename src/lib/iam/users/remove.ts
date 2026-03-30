@@ -5,15 +5,17 @@ import { listUsers, removeUser as removeUserFromOrg } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { confirm, requireInteractive } from '@utils/interactive.js';
 import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('iam users', 'remove');
 
 export default async function removeUser(options: Record<string, unknown>) {
   printStart(context);
 
+  const format = getFormat(options);
+
   const resourceOption = getOption<string | string[]>(options, ['resource']);
-  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
+  const force = getOption<boolean>(options, ['yes', 'y']);
 
   if (isFlyOrganization()) return;
 
@@ -70,6 +72,10 @@ export default async function removeUser(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'removed', users: resources }));
   }
 
   printSuccess(context);

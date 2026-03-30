@@ -2,12 +2,14 @@ import { getStorageConfig } from '@auth/provider.js';
 import { createBucketSnapshot } from '@tigrisdata/storage';
 import { failWithError } from '@utils/exit.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('snapshots', 'take');
 
 export default async function take(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   const name = getOption<string>(options, ['name']);
   const snapshotName = getOption<string>(options, [
@@ -28,6 +30,16 @@ export default async function take(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(
+      JSON.stringify({
+        action: 'taken',
+        bucket: name,
+        version: data?.snapshotVersion,
+      })
+    );
   }
 
   printSuccess(context, {

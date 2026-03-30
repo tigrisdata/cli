@@ -15,6 +15,7 @@ import {
   printStart,
   printSuccess,
 } from '@utils/messages.js';
+import { getFormat } from '@utils/options.js';
 
 import { DEFAULT_STORAGE_ENDPOINT } from '../../constants.js';
 
@@ -22,6 +23,8 @@ const context = msg('configure');
 
 export default async function configure(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   let accessKey =
     options['access-key'] ||
@@ -114,6 +117,10 @@ export default async function configure(options: Record<string, unknown>) {
       }
     } catch {
       // Non-fatal — org will just be missing
+    }
+
+    if (format === 'json') {
+      console.log(JSON.stringify({ action: 'configured' }));
     }
 
     printSuccess(context);

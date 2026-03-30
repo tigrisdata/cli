@@ -3,7 +3,7 @@ import { get, head, list, put, remove } from '@tigrisdata/storage';
 import { exitWithError } from '@utils/exit.js';
 import { formatSize } from '@utils/format.js';
 import { confirm, requireInteractive } from '@utils/interactive.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import {
   globToRegex,
   isPathFolder,
@@ -19,12 +19,9 @@ let _jsonMode = false;
 export default async function mv(options: Record<string, unknown>) {
   const src = getOption<string>(options, ['src']);
   const dest = getOption<string>(options, ['dest']);
-  const force = getOption<boolean>(options, ['force', 'f', 'F', 'yes', 'y']);
+  const force = getOption<boolean>(options, ['yes', 'y']);
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
-  const jsonFlag = getOption<boolean>(options, ['json']);
-  const format = jsonFlag
-    ? 'json'
-    : getOption<string>(options, ['format'], 'table');
+  const format = getFormat(options);
   _jsonMode = format === 'json';
 
   if (!src || !dest) {

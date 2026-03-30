@@ -4,7 +4,7 @@ import { buildBucketInfo } from '@utils/bucket-info.js';
 import { failWithError } from '@utils/exit.js';
 import { formatOutput, formatSize } from '@utils/format.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import { parseAnyPath } from '@utils/path.js';
 
 const context = msg('stat');
@@ -13,10 +13,7 @@ export default async function stat(options: Record<string, unknown>) {
   printStart(context);
 
   const pathString = getOption<string>(options, ['path']);
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
   const snapshotVersion = getOption<string>(options, [
     'snapshot-version',
     'snapshotVersion',

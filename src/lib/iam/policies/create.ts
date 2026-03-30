@@ -4,7 +4,7 @@ import { getOAuthIAMConfig } from '@auth/iam.js';
 import { addPolicy, type PolicyDocument } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 import { parseDocument, readStdin } from './utils.js';
 
@@ -12,6 +12,8 @@ const context = msg('iam policies', 'create');
 
 export default async function create(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   const name = getOption<string>(options, ['name']);
   const documentArg = getOption<string>(options, ['document', 'd']);
@@ -69,6 +71,12 @@ export default async function create(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(
+      JSON.stringify({ action: 'created', name: data.name, arn: data.resource })
+    );
   }
 
   printSuccess(context, { name: data.name });

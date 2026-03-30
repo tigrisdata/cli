@@ -12,7 +12,7 @@ import {
 import { failWithError } from '@utils/exit.js';
 import { requireInteractive } from '@utils/interactive.js';
 import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 import { parseDocument, readStdin } from './utils.js';
 
@@ -20,6 +20,8 @@ const context = msg('iam policies', 'edit');
 
 export default async function edit(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   let resource = getOption<string>(options, ['resource']);
   const documentArg = getOption<string>(options, ['document', 'd']);
@@ -113,6 +115,10 @@ export default async function edit(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'updated', arn: data.resource }));
   }
 
   printSuccess(context, { resource: data.resource });

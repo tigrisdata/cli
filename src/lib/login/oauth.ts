@@ -9,11 +9,16 @@ import {
   printStart,
   printSuccess,
 } from '@utils/messages.js';
+import { getFormat } from '@utils/options.js';
 
 const context = msg('login', 'oauth');
 
-export async function oauth(): Promise<void> {
+export async function oauth(
+  options: Record<string, unknown> = {}
+): Promise<void> {
   printStart(context);
+
+  const format = getFormat(options);
   try {
     const authClient = getAuthClient();
 
@@ -38,6 +43,11 @@ export async function oauth(): Promise<void> {
     if (orgs.length > 0) {
       const firstOrg = orgs[0];
       await storeSelectedOrganization(firstOrg.id);
+
+      if (format === 'json') {
+        console.log(JSON.stringify({ action: 'logged_in' }));
+      }
+
       printSuccess(context, { org: firstOrg.displayName || firstOrg.name });
       printNextActions(context);
 
@@ -45,6 +55,10 @@ export async function oauth(): Promise<void> {
         printHint(context, { count: orgs.length });
       }
     } else {
+      if (format === 'json') {
+        console.log(JSON.stringify({ action: 'logged_in' }));
+      }
+
       printSuccess(context, { org: 'none' });
       printNextActions(context);
     }

@@ -8,7 +8,7 @@ import {
   printStart,
   printSuccess,
 } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('organizations', 'select');
 
@@ -16,6 +16,8 @@ export default async function select(options: Record<string, unknown>) {
   printStart(context);
 
   if (requireOAuthLogin('Organization selection')) return;
+
+  const format = getFormat(options);
 
   const name = getOption<string>(options, ['name', 'N']);
 
@@ -49,6 +51,10 @@ export default async function select(options: Record<string, unknown>) {
 
   // Store selected organization
   await storeSelectedOrganization(org.id);
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'selected', organization: org.name }));
+  }
 
   printSuccess(context, { name: org.name });
   printNextActions(context, { name: org.name });

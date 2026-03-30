@@ -2,7 +2,7 @@ import { getStorageConfig } from '@auth/provider.js';
 import { list, remove, removeBucket } from '@tigrisdata/storage';
 import { exitWithError } from '@utils/exit.js';
 import { confirm, requireInteractive } from '@utils/interactive.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import {
   globToRegex,
   isPathFolder,
@@ -16,12 +16,9 @@ let _jsonMode = false;
 
 export default async function rm(options: Record<string, unknown>) {
   const pathString = getOption<string>(options, ['path']);
-  const force = getOption<boolean>(options, ['force', 'f', 'F', 'yes', 'y']);
+  const force = getOption<boolean>(options, ['yes', 'y']);
   const recursive = !!getOption<boolean>(options, ['recursive', 'r']);
-  const jsonFlag = getOption<boolean>(options, ['json']);
-  const format = jsonFlag
-    ? 'json'
-    : getOption<string>(options, ['format'], 'table');
+  const format = getFormat(options);
   _jsonMode = format === 'json';
 
   if (!pathString) {

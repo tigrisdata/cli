@@ -8,17 +8,14 @@ import {
   type TableColumn,
 } from '@utils/format.js';
 import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat } from '@utils/options.js';
 
 const context = msg('iam users', 'list');
 
 export default async function list(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   if (isFlyOrganization()) return;
 

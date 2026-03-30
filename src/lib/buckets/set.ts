@@ -3,17 +3,14 @@ import { updateBucket, type UpdateBucketOptions } from '@tigrisdata/storage';
 import { failWithError } from '@utils/exit.js';
 import { parseLocations } from '@utils/locations.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption, parseBoolean } from '@utils/options.js';
+import { getFormat, getOption, parseBoolean } from '@utils/options.js';
 
 const context = msg('buckets', 'set');
 
 export default async function set(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format'], 'table');
+  const format = getFormat(options);
 
   const name = getOption<string>(options, ['name']);
   const access = getOption<string>(options, ['access']);

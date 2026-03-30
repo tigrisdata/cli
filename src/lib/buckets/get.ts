@@ -4,7 +4,7 @@ import { buildBucketInfo } from '@utils/bucket-info.js';
 import { failWithError } from '@utils/exit.js';
 import { formatOutput } from '@utils/format.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('buckets', 'get');
 
@@ -12,10 +12,7 @@ export default async function get(options: Record<string, unknown>) {
   printStart(context);
 
   const name = getOption<string>(options, ['name']);
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F']) || 'table';
+  const format = getFormat(options);
 
   if (!name) {
     failWithError(context, 'Bucket name is required');

@@ -2,17 +2,14 @@ import { getIAMConfig } from '@auth/iam.js';
 import { getAccessKey } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('access-keys', 'get');
 
 export default async function get(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   const id = getOption<string>(options, ['id']);
 

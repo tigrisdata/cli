@@ -7,7 +7,7 @@ import { listAccessKeys } from '@tigrisdata/iam';
 import { getPresignedUrl } from '@tigrisdata/storage';
 import { exitWithError } from '@utils/exit.js';
 import { formatJson } from '@utils/format.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import { parseAnyPath } from '@utils/path.js';
 import enquirer from 'enquirer';
 const { prompt } = enquirer;
@@ -34,10 +34,7 @@ export default async function presign(options: Record<string, unknown>) {
     getOption<string>(options, ['expires-in', 'expiresIn', 'e']) ?? '3600',
     10
   );
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : (getOption<string>(options, ['format', 'f']) ?? 'url');
+  const format = getFormat(options, 'url');
   const accessKeyFlag = getOption<string>(options, ['access-key', 'accessKey']);
 
   const config = await getStorageConfig();

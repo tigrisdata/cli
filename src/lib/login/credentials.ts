@@ -11,6 +11,7 @@ import { whoami } from '@tigrisdata/iam';
 import { failWithError, printNextActions } from '@utils/exit.js';
 import { requireInteractive } from '@utils/interactive.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
+import { getFormat } from '@utils/options.js';
 
 import { DEFAULT_STORAGE_ENDPOINT } from '../../constants.js';
 
@@ -23,6 +24,8 @@ const context = msg('login', 'credentials');
  */
 export default async function credentials(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   let accessKey =
     options['access-key'] ||
@@ -103,6 +106,10 @@ export default async function credentials(options: Record<string, unknown>) {
     }
   } catch {
     // Non-fatal — org will just be missing
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'logged_in' }));
   }
 
   printSuccess(context);

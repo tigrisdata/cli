@@ -13,21 +13,18 @@ import {
   printStart,
   printSuccess,
 } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('objects', 'delete');
 
 export default async function deleteObject(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   const bucket = getOption<string>(options, ['bucket']);
   const keys = getOption<string | string[]>(options, ['key']);
-  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
+  const force = getOption<boolean>(options, ['yes', 'y']);
 
   if (!bucket) {
     failWithError(context, 'Bucket name is required');

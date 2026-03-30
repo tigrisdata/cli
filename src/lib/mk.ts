@@ -2,7 +2,7 @@ import { getStorageConfig } from '@auth/provider.js';
 import { createBucket, put, type StorageClass } from '@tigrisdata/storage';
 import { exitWithError } from '@utils/exit.js';
 import { parseLocations } from '@utils/locations.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import { parseAnyPath } from '@utils/path.js';
 
 export default async function mk(options: Record<string, unknown>) {
@@ -19,10 +19,7 @@ export default async function mk(options: Record<string, unknown>) {
   }
 
   const config = await getStorageConfig();
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   if (!path) {
     // Create a bucket

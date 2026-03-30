@@ -2,12 +2,14 @@ import { getStorageConfigWithOrg } from '@auth/provider.js';
 import { setBucketMigration } from '@tigrisdata/storage';
 import { failWithError } from '@utils/exit.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('buckets', 'set-migration');
 
 export default async function setMigration(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   const name = getOption<string>(options, ['name']);
   const bucket = getOption<string>(options, ['bucket']);
@@ -49,6 +51,10 @@ export default async function setMigration(options: Record<string, unknown>) {
       failWithError(context, error);
     }
 
+    if (format === 'json') {
+      console.log(JSON.stringify({ action: 'updated', bucket: name }));
+    }
+
     printSuccess(context, { name });
     return;
   }
@@ -75,6 +81,10 @@ export default async function setMigration(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'updated', bucket: name }));
   }
 
   printSuccess(context, { name });

@@ -5,7 +5,7 @@ import { getPolicy, listPolicies } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { formatOutput } from '@utils/format.js';
 import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('iam policies', 'get');
 
@@ -13,10 +13,7 @@ export default async function get(options: Record<string, unknown>) {
   printStart(context);
 
   let resource = getOption<string>(options, ['resource']);
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   const iamConfig = await getOAuthIAMConfig(context);
 

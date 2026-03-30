@@ -3,20 +3,17 @@ import { removeAccessKey } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { confirm, requireInteractive } from '@utils/interactive.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('access-keys', 'delete');
 
 export default async function remove(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   const id = getOption<string>(options, ['id']);
-  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
+  const force = getOption<boolean>(options, ['yes', 'y']);
 
   if (!id) {
     failWithError(context, 'Access key ID is required');

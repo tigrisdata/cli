@@ -2,7 +2,7 @@ import { getStorageConfig } from '@auth/provider.js';
 import { get } from '@tigrisdata/storage';
 import { failWithError } from '@utils/exit.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import { createWriteStream, writeFileSync } from 'fs';
 import { extname } from 'path';
 import { Readable } from 'stream';
@@ -104,10 +104,7 @@ function detectFormat(key: string, output?: string): 'string' | 'stream' {
 export default async function getObject(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const outputFormat = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const outputFormat = getFormat(options);
 
   const bucket = getOption<string>(options, ['bucket']);
   const key = getOption<string>(options, ['key']);

@@ -6,7 +6,7 @@ import {
   printNextActions,
 } from '@utils/exit.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('access-keys', 'assign');
 
@@ -21,10 +21,7 @@ function normalizeToArray<T>(value: T | T[] | undefined): T[] {
 export default async function assign(options: Record<string, unknown>) {
   printStart(context);
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   const id = getOption<string>(options, ['id']);
   const admin = getOption<boolean>(options, ['admin']);

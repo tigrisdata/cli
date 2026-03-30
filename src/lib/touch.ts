@@ -1,7 +1,7 @@
 import { getStorageConfig } from '@auth/provider.js';
 import { put } from '@tigrisdata/storage';
 import { exitWithError } from '@utils/exit.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 import { parseAnyPath } from '@utils/path.js';
 
 export default async function touch(options: Record<string, unknown>) {
@@ -21,10 +21,7 @@ export default async function touch(options: Record<string, unknown>) {
     exitWithError('Object key is required (use mk to create buckets)');
   }
 
-  const json = getOption<boolean>(options, ['json']);
-  const format = json
-    ? 'json'
-    : getOption<string>(options, ['format', 'f', 'F'], 'table');
+  const format = getFormat(options);
 
   const config = await getStorageConfig();
 

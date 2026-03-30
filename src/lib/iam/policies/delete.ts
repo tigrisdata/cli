@@ -5,15 +5,17 @@ import { deletePolicy, listPolicies } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { confirm, requireInteractive } from '@utils/interactive.js';
 import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('iam policies', 'delete');
 
 export default async function del(options: Record<string, unknown>) {
   printStart(context);
 
+  const format = getFormat(options);
+
   let resource = getOption<string>(options, ['resource']);
-  const force = getOption<boolean>(options, ['force', 'yes', 'y']);
+  const force = getOption<boolean>(options, ['yes', 'y']);
 
   const iamConfig = await getOAuthIAMConfig(context);
 
@@ -62,6 +64,10 @@ export default async function del(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'deleted', arn: resource }));
   }
 
   printSuccess(context, { resource });

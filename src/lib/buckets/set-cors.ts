@@ -2,12 +2,14 @@ import { getStorageConfigWithOrg } from '@auth/provider.js';
 import { setBucketCors } from '@tigrisdata/storage';
 import { failWithError } from '@utils/exit.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
-import { getOption } from '@utils/options.js';
+import { getFormat, getOption } from '@utils/options.js';
 
 const context = msg('buckets', 'set-cors');
 
 export default async function setCors(options: Record<string, unknown>) {
   printStart(context);
+
+  const format = getFormat(options);
 
   const name = getOption<string>(options, ['name']);
   const origins = getOption<string>(options, ['origins']);
@@ -65,6 +67,10 @@ export default async function setCors(options: Record<string, unknown>) {
 
   if (error) {
     failWithError(context, error);
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ action: 'updated', bucket: name }));
   }
 
   printSuccess(context, { name });

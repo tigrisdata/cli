@@ -160,9 +160,11 @@ export function showCommandHelp(
     }
   }
 
-  if (command.arguments && command.arguments.length > 0) {
+  const globalArgs = specs.definitions?.global_arguments ?? [];
+  const effectiveArgs = getEffectiveArguments(globalArgs, command.arguments);
+  if (effectiveArgs.length > 0) {
     console.log('Arguments:');
-    command.arguments.forEach((arg) => {
+    effectiveArgs.forEach((arg) => {
       console.log(formatArgumentHelp(arg));
     });
     console.log();
@@ -210,6 +212,27 @@ export function showMainHelp(
   console.log(
     `\nUse "${specs.name} <command> help" for more information about a command.`
   );
+}
+
+/**
+ * Merge global arguments (from specs.yaml definitions.global_arguments)
+ * into a command's argument list, skipping any that the command already
+ * defines by name or whose alias collides with an existing argument's alias.
+ */
+function getEffectiveArguments(
+  globalArgs: Argument[],
+  specArgs?: Argument[]
+): Argument[] {
+  const args = specArgs ?? [];
+  const definedNames = new Set(args.map((a) => a.name));
+  const definedAliases = new Set(
+    args.filter((a) => a.alias).map((a) => a.alias)
+  );
+  const injected = globalArgs.filter(
+    (g) =>
+      !definedNames.has(g.name) && !(g.alias && definedAliases.has(g.alias))
+  );
+  return [...args, ...injected];
 }
 
 export function addArgumentsToCommand(
@@ -399,6 +422,7 @@ export function registerCommands(
   pathParts: string[] = []
 ) {
   const { specs, loadModule, hasImplementation } = config;
+  const globalArgs = specs.definitions?.global_arguments ?? [];
 
   for (const spec of commandSpecs) {
     if (!isValidCommandName(spec.name)) {
@@ -429,13 +453,11 @@ export function registerCommands(
       if (spec.default) {
         const defaultCmd = spec.commands.find((c) => c.name === spec.default);
         if (defaultCmd) {
-          addArgumentsToCommand(cmd, spec.arguments);
-          addArgumentsToCommand(cmd, defaultCmd.arguments);
-
-          const allArguments = [
+          const allArguments = getEffectiveArguments(globalArgs, [
             ...(spec.arguments || []),
             ...(defaultCmd.arguments || []),
-          ];
+          ]);
+          addArgumentsToCommand(cmd, allArguments);
 
           cmd.action(async (...args) => {
             const options = args.pop();
@@ -470,7 +492,10 @@ export function registerCommands(
       }
     } else {
       // Leaf command
-      addArgumentsToCommand(cmd, spec.arguments);
+      addArgumentsToCommand(
+        cmd,
+        getEffectiveArguments(globalArgs, spec.arguments)
+      );
 
       cmd.action(async (...args) => {
         const options = args.pop();
@@ -517,7 +542,6 @@ export function createProgram(config: CLIConfig): CommanderCommand {
 
   const program = new CommanderCommand();
   program.name(specs.name).description(specs.description).version(version);
-  program.option('-y, --yes', 'Skip all confirmation prompts');
 
   registerCommands(config, program, specs.commands);
 
