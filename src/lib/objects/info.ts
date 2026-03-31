@@ -4,25 +4,9 @@ import { failWithError } from '@utils/exit.js';
 import { formatOutput, formatSize } from '@utils/format.js';
 import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getFormat, getOption } from '@utils/options.js';
-import { parseAnyPath } from '@utils/path.js';
+import { resolveObjectArgs } from '@utils/path.js';
 
 const context = msg('objects', 'info');
-
-/**
- * Resolves bucket and key from the two positional arguments.
- * When both `bucketArg` and `keyArg` are provided, uses them directly.
- * Otherwise parses `bucketArg` as a full path (supports t3://, tigris://, or bare bucket/key).
- */
-export function resolveObjectArgs(
-  bucketArg: string,
-  keyArg?: string
-): { bucket: string; key: string } {
-  if (keyArg) {
-    return { bucket: bucketArg, key: keyArg };
-  }
-  const parsed = parseAnyPath(bucketArg);
-  return { bucket: parsed.bucket, key: parsed.path };
-}
 
 export default async function objectInfo(options: Record<string, unknown>) {
   printStart(context);
