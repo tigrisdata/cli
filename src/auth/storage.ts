@@ -495,6 +495,26 @@ export async function storeCredentialOrganization(
 }
 
 /**
+ * Clear temporary credentials (from login command)
+ */
+export async function clearTemporaryCredentials(): Promise<void> {
+  const config = readConfig();
+  if (config.credentials) {
+    delete config.credentials.temporary;
+  }
+  await writeConfig(config);
+}
+
+/**
+ * Clear all OAuth data (tokens, organizations, selectedOrganization)
+ */
+export async function clearOAuthData(): Promise<void> {
+  const config = readConfig();
+  delete config.oauth;
+  await writeConfig(config);
+}
+
+/**
  * Clear all stored data (except saved credentials from configure)
  */
 export async function clearAllData(): Promise<void> {
