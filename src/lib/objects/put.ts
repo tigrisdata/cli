@@ -30,12 +30,10 @@ export default async function putObject(options: Record<string, unknown>) {
     failWithError(context, 'Bucket name or path is required');
   }
 
-  // When bucket contains a combined path (e.g. t3://bucket/key), the key
-  // positional shifts to be the file argument.
-  const { bucket, key } = resolveObjectArgs(bucketArg, keyArg);
-  // Two-arg style: file comes from the file positional
-  // Combined path style: keyArg is actually the file
-  const file = keyArg && key === keyArg ? fileArg : keyArg || fileArg;
+  const combined = resolveObjectArgs(bucketArg);
+  const bucket = combined.bucket;
+  const key = combined.key || keyArg;
+  const file = combined.key ? keyArg || fileArg : fileArg;
 
   if (!key) {
     failWithError(context, 'Object key is required');

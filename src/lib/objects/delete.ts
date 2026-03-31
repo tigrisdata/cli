@@ -31,19 +31,12 @@ export default async function deleteObject(options: Record<string, unknown>) {
     failWithError(context, 'Bucket name or path is required');
   }
 
-  let bucket: string;
-  let keys: string | string[];
+  const resolved = resolveObjectArgs(bucketArg);
+  const bucket = resolved.bucket;
+  const keys = keysArg || resolved.key || undefined;
 
-  if (keysArg) {
-    bucket = resolveObjectArgs(bucketArg).bucket;
-    keys = keysArg;
-  } else {
-    const resolved = resolveObjectArgs(bucketArg);
-    bucket = resolved.bucket;
-    if (!resolved.key) {
-      failWithError(context, 'Object key is required');
-    }
-    keys = resolved.key;
+  if (!keys) {
+    failWithError(context, 'Object key is required');
   }
 
   const config = await getStorageConfig();
