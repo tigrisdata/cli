@@ -1146,6 +1146,7 @@ commands:
       - "tigris objects get my-bucket report.pdf --output ./report.pdf"
       - "tigris objects put my-bucket report.pdf ./report.pdf"
       - "tigris objects delete my-bucket report.pdf"
+      - "tigris objects info my-bucket report.pdf"
     commands:
       # list
       - name: list
@@ -1314,6 +1315,33 @@ commands:
           - name: new-key
             description: Rename the object to a new key
             alias: n
+      # info
+      - name: info
+        description: Show metadata for an object (content type, size, modified date)
+        alias: i
+        examples:
+          - "tigris objects info my-bucket report.pdf"
+          - "tigris objects info t3://my-bucket/report.pdf"
+          - "tigris objects info my-bucket report.pdf --format json"
+        messages:
+          onStart: ''
+          onSuccess: ''
+          onFailure: 'Failed to get object info'
+        arguments:
+          - name: bucket
+            type: positional
+            required: true
+            description: Name of the bucket, or a full path (t3://bucket/key)
+          - name: key
+            type: positional
+            description: Key of the object (omit if bucket contains the full path)
+          - name: format
+            description: Output format
+            options: [json, table, xml]
+            default: table
+          - name: snapshot-version
+            description: Read from a specific bucket snapshot
+            alias: snapshot
 
   #########################
   # Manage access keys
