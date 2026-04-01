@@ -1,5 +1,9 @@
 import { getAuthClient } from '@auth/client.js';
-import { getTigrisConfig, resolveAuthMethod } from '@auth/provider.js';
+import {
+  getStorageConfig,
+  getTigrisConfig,
+  resolveAuthMethod,
+} from '@auth/provider.js';
 import { getSelectedOrganization } from '@auth/storage.js';
 import { listOrganizations, whoami as iamWhoami } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
@@ -83,9 +87,7 @@ export default async function whoami(
         userId = claims.sub;
 
         // Fetch organizations
-        const config = await (
-          await import('@auth/provider.js')
-        ).getStorageConfig();
+        const config = await getStorageConfig();
         selectedOrg = getSelectedOrganization();
         const { data, error } = await listOrganizations({ config });
         if (error) {

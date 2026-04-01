@@ -93,11 +93,11 @@ export function getEnvCredentials(): EnvCredentials | null {
 
 /**
  * Get non-login credentials in priority order:
- * 1. Environment variables (TIGRIS_ACCESS_KEY / AWS_ACCESS_KEY_ID)
+ * 1. Environment variables (AWS_ACCESS_KEY_ID / TIGRIS_STORAGE_ACCESS_KEY_ID)
  * 2. Stored credentials (temporary from login, then saved from configure)
  *
  * Note: AWS profile and login method checks are handled separately.
- * Full resolution order: AWS_PROFILE → login → env vars → configured
+ * Full resolution order: AWS_PROFILE → env vars → oauth → credentials login → configured
  */
 export function getCredentials(): CredentialsConfig | null {
   return getEnvCredentials() || getStoredCredentials() || null;
@@ -151,7 +151,10 @@ export type AuthMethod =
 
 /**
  * Resolve which auth method is active, following the same priority as getStorageConfig().
- * 1. AWS Profile  2. OAuth login  3. Credentials login  4. Env vars  5. Configured
+ * 1. AWS Profile  2. Env vars (AWS_ then TIGRIS_)  3. OAuth  4. Credentials login  5. Configured
+ *
+ * Env vars come before login methods because setting them is an explicit
+ * per-session override that should win over a previously stored login.
  */
 export async function resolveAuthMethod(): Promise<AuthMethod> {
   // 1. AWS profile
@@ -166,7 +169,18 @@ export async function resolveAuthMethod(): Promise<AuthMethod> {
     };
   }
 
-  // 2–3. Login (oauth or credentials)
+  // 2. Env vars (explicit per-session override)
+  const envCreds = getEnvCredentials();
+  if (envCreds) {
+    return {
+      type: 'environment',
+      accessKeyId: envCreds.accessKeyId,
+      secretAccessKey: envCreds.secretAccessKey,
+      source: envCreds.source,
+    };
+  }
+
+  // 3–4. Login (oauth or credentials)
   const loginMethod = getStoredLoginMethod();
 
   if (loginMethod === 'oauth') {
@@ -182,17 +196,6 @@ export async function resolveAuthMethod(): Promise<AuthMethod> {
         secretAccessKey: stored.secretAccessKey,
       };
     }
-  }
-
-  // 4. Env vars
-  const envCreds = getEnvCredentials();
-  if (envCreds) {
-    return {
-      type: 'environment',
-      accessKeyId: envCreds.accessKeyId,
-      secretAccessKey: envCreds.secretAccessKey,
-      source: envCreds.source,
-    };
   }
 
   // 5. Configured credentials
@@ -323,8 +326,8 @@ export async function getStorageConfig(options?: {
 export async function isAuthenticated(): Promise<boolean> {
   return (
     hasAwsProfile() ||
-    (await getLoginMethod()) !== null ||
     getEnvCredentials() !== null ||
+    (await getLoginMethod()) !== null ||
     getStoredCredentials() !== null
   );
 }

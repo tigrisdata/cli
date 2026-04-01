@@ -200,16 +200,6 @@ describe('resolveAuthMethod', () => {
   // Priority ordering
   // -------------------------------------------------------------------------
 
-  it('aws-profile takes priority over oauth login', async () => {
-    writeRawConfig({ version: 2, activeMethod: 'oauth' });
-    createAwsFiles();
-    process.env.AWS_PROFILE = 'prof';
-
-    const { resolveAuthMethod } = await import('../../src/auth/provider.js');
-    const method = await resolveAuthMethod();
-    expect(method.type).toBe('aws-profile');
-  });
-
   it('aws-profile takes priority over env vars', async () => {
     writeRawConfig({ version: 2 });
     createAwsFiles();
@@ -220,6 +210,46 @@ describe('resolveAuthMethod', () => {
     const { resolveAuthMethod } = await import('../../src/auth/provider.js');
     const method = await resolveAuthMethod();
     expect(method.type).toBe('aws-profile');
+  });
+
+  it('aws-profile takes priority over oauth login', async () => {
+    writeRawConfig({ version: 2, activeMethod: 'oauth' });
+    createAwsFiles();
+    process.env.AWS_PROFILE = 'prof';
+
+    const { resolveAuthMethod } = await import('../../src/auth/provider.js');
+    const method = await resolveAuthMethod();
+    expect(method.type).toBe('aws-profile');
+  });
+
+  it('env vars take priority over oauth login', async () => {
+    writeRawConfig({ version: 2, activeMethod: 'oauth' });
+    process.env.AWS_ACCESS_KEY_ID = 'AWS-AK';
+    process.env.AWS_SECRET_ACCESS_KEY = 'AWS-SK';
+
+    const { resolveAuthMethod } = await import('../../src/auth/provider.js');
+    const method = await resolveAuthMethod();
+    expect(method.type).toBe('environment');
+  });
+
+  it('env vars take priority over credentials login', async () => {
+    writeRawConfig({
+      version: 2,
+      activeMethod: 'credentials',
+      credentials: {
+        temporary: {
+          accessKeyId: 'CRED-AK',
+          secretAccessKey: 'CRED-SK',
+          endpoint: 'https://c.com',
+        },
+      },
+    });
+    process.env.TIGRIS_STORAGE_ACCESS_KEY_ID = 'TIG-AK';
+    process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY = 'TIG-SK';
+
+    const { resolveAuthMethod } = await import('../../src/auth/provider.js');
+    const method = await resolveAuthMethod();
+    expect(method.type).toBe('environment');
   });
 
   it('oauth takes priority over credentials login', async () => {
@@ -238,36 +268,6 @@ describe('resolveAuthMethod', () => {
     const { resolveAuthMethod } = await import('../../src/auth/provider.js');
     const method = await resolveAuthMethod();
     expect(method.type).toBe('oauth');
-  });
-
-  it('oauth takes priority over env vars', async () => {
-    writeRawConfig({ version: 2, activeMethod: 'oauth' });
-    process.env.AWS_ACCESS_KEY_ID = 'AWS-AK';
-    process.env.AWS_SECRET_ACCESS_KEY = 'AWS-SK';
-
-    const { resolveAuthMethod } = await import('../../src/auth/provider.js');
-    const method = await resolveAuthMethod();
-    expect(method.type).toBe('oauth');
-  });
-
-  it('credentials login takes priority over env vars', async () => {
-    writeRawConfig({
-      version: 2,
-      activeMethod: 'credentials',
-      credentials: {
-        temporary: {
-          accessKeyId: 'CRED-AK',
-          secretAccessKey: 'CRED-SK',
-          endpoint: 'https://c.com',
-        },
-      },
-    });
-    process.env.AWS_ACCESS_KEY_ID = 'AWS-AK';
-    process.env.AWS_SECRET_ACCESS_KEY = 'AWS-SK';
-
-    const { resolveAuthMethod } = await import('../../src/auth/provider.js');
-    const method = await resolveAuthMethod();
-    expect(method.type).toBe('credentials');
   });
 
   it('env vars take priority over configured credentials', async () => {
@@ -292,17 +292,6 @@ describe('resolveAuthMethod', () => {
   // -------------------------------------------------------------------------
   // Edge cases / fallthrough
   // -------------------------------------------------------------------------
-
-  it('credentials login with no stored creds falls through to env vars', async () => {
-    // activeMethod is credentials but no credential slots exist
-    writeRawConfig({ version: 2, activeMethod: 'credentials' });
-    process.env.AWS_ACCESS_KEY_ID = 'AWS-AK';
-    process.env.AWS_SECRET_ACCESS_KEY = 'AWS-SK';
-
-    const { resolveAuthMethod } = await import('../../src/auth/provider.js');
-    const method = await resolveAuthMethod();
-    expect(method.type).toBe('environment');
-  });
 
   it('credentials login with no stored creds falls through to configured', async () => {
     writeRawConfig({
