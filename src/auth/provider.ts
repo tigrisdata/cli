@@ -51,29 +51,16 @@ const auth0Config = getAuth0Config();
 // Environment credential helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Return which env var family is providing credentials ('tigris' | 'aws' | null)
- */
-export function getEnvCredentialSource(): 'tigris' | 'aws' | null {
-  if (
-    process.env.TIGRIS_STORAGE_ACCESS_KEY_ID ||
-    process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY
-  ) {
-    return 'tigris';
-  }
-  if (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_SECRET_ACCESS_KEY) {
-    return 'aws';
-  }
-  return null;
-}
+type EnvCredentials = CredentialsConfig & { source: 'tigris' | 'aws' };
 
 /**
  * Get credentials from environment variables.
  * If any TIGRIS_ var is set, use TIGRIS_ vars exclusively.
  * Otherwise, fall back to AWS_ vars.
+ * Returns the resolved credentials along with the env var family ('tigris' | 'aws').
  */
-export function getEnvCredentials(): CredentialsConfig | null {
-  // Check TIGRIS_ vars first
+export function getEnvCredentials(): EnvCredentials | null {
+  // Check TIGRIS_ vars first — if either is set, stay in TIGRIS mode exclusively
   if (
     process.env.TIGRIS_STORAGE_ACCESS_KEY_ID ||
     process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY
@@ -88,7 +75,7 @@ export function getEnvCredentials(): CredentialsConfig | null {
     const endpoint =
       process.env.TIGRIS_STORAGE_ENDPOINT || DEFAULT_STORAGE_ENDPOINT;
 
-    return { accessKeyId, secretAccessKey, endpoint };
+    return { accessKeyId, secretAccessKey, endpoint, source: 'tigris' };
   }
 
   // Fall back to AWS_ vars
@@ -101,7 +88,7 @@ export function getEnvCredentials(): CredentialsConfig | null {
 
   const endpoint = process.env.AWS_ENDPOINT_URL_S3 || DEFAULT_STORAGE_ENDPOINT;
 
-  return { accessKeyId, secretAccessKey, endpoint };
+  return { accessKeyId, secretAccessKey, endpoint, source: 'aws' };
 }
 
 /**
@@ -200,12 +187,11 @@ export async function resolveAuthMethod(): Promise<AuthMethod> {
   // 4. Env vars
   const envCreds = getEnvCredentials();
   if (envCreds) {
-    const source = getEnvCredentialSource();
     return {
       type: 'environment',
       accessKeyId: envCreds.accessKeyId,
       secretAccessKey: envCreds.secretAccessKey,
-      source: source ?? 'aws',
+      source: envCreds.source,
     };
   }
 
