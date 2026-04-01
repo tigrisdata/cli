@@ -141,13 +141,22 @@ export default async function whoami(
     if (organizations) {
       // OAuth path — list all orgs
       if (organizations.length > 0) {
+        const maxVisible = 5;
+        const visible = organizations.slice(0, maxVisible);
+
         lines.push('');
         lines.push(`Organizations (${organizations.length}):`);
-        organizations.forEach((org) => {
+        visible.forEach((org) => {
           const isSelected = org.id === selectedOrg;
           const marker = isSelected ? '>' : ' ';
           lines.push(`   ${marker} ${org.name} (${org.id})`);
         });
+
+        if (organizations.length > maxVisible) {
+          lines.push(
+            `   ... and ${organizations.length - maxVisible} more. Run "tigris organizations list" to see all.`
+          );
+        }
 
         if (selectedOrg) {
           const selected = organizations.find((o) => o.id === selectedOrg);
