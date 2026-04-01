@@ -347,7 +347,7 @@ describe('resolveAuthMethod', () => {
     expect(method.type).toBe('none');
   });
 
-  it('TIGRIS_ env vars take priority over AWS_ env vars', async () => {
+  it('AWS_ env vars take priority over TIGRIS_ env vars', async () => {
     writeRawConfig({ version: 2 });
     process.env.TIGRIS_STORAGE_ACCESS_KEY_ID = 'TIG-AK';
     process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY = 'TIG-SK';
@@ -359,9 +359,9 @@ describe('resolveAuthMethod', () => {
 
     expect(method).toEqual({
       type: 'environment',
-      accessKeyId: 'TIG-AK',
-      secretAccessKey: 'TIG-SK',
-      source: 'tigris',
+      accessKeyId: 'AWS-AK',
+      secretAccessKey: 'AWS-SK',
+      source: 'aws',
     });
   });
 });

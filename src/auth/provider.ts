@@ -27,20 +27,20 @@ export interface TigrisConfig {
 }
 
 export function getTigrisConfig(): TigrisConfig {
-  // If any TIGRIS_ endpoint var is set, use TIGRIS_ vars exclusively
-  if (process.env.TIGRIS_STORAGE_ENDPOINT || process.env.TIGRIS_IAM_ENDPOINT) {
+  // AWS_ endpoint vars take priority
+  if (process.env.AWS_ENDPOINT_URL_S3 || process.env.AWS_ENDPOINT_URL_IAM) {
     return {
-      endpoint: process.env.TIGRIS_STORAGE_ENDPOINT || DEFAULT_STORAGE_ENDPOINT,
-      iamEndpoint: process.env.TIGRIS_IAM_ENDPOINT || DEFAULT_IAM_ENDPOINT,
-      mgmtEndpoint: process.env.TIGRIS_MGMT_ENDPOINT || DEFAULT_MGMT_ENDPOINT,
+      endpoint: process.env.AWS_ENDPOINT_URL_S3 || DEFAULT_STORAGE_ENDPOINT,
+      iamEndpoint: process.env.AWS_ENDPOINT_URL_IAM || DEFAULT_IAM_ENDPOINT,
+      mgmtEndpoint: process.env.AWS_ENDPOINT_URL_MGMT || DEFAULT_MGMT_ENDPOINT,
     };
   }
 
-  // Fall back to AWS_ vars
+  // Fall back to TIGRIS_ vars
   return {
-    endpoint: process.env.AWS_ENDPOINT_URL_S3 || DEFAULT_STORAGE_ENDPOINT,
-    iamEndpoint: process.env.AWS_ENDPOINT_URL_IAM || DEFAULT_IAM_ENDPOINT,
-    mgmtEndpoint: process.env.AWS_ENDPOINT_URL_MGMT || DEFAULT_MGMT_ENDPOINT,
+    endpoint: process.env.TIGRIS_STORAGE_ENDPOINT || DEFAULT_STORAGE_ENDPOINT,
+    iamEndpoint: process.env.TIGRIS_IAM_ENDPOINT || DEFAULT_IAM_ENDPOINT,
+    mgmtEndpoint: process.env.TIGRIS_MGMT_ENDPOINT || DEFAULT_MGMT_ENDPOINT,
   };
 }
 
@@ -55,40 +55,39 @@ type EnvCredentials = CredentialsConfig & { source: 'tigris' | 'aws' };
 
 /**
  * Get credentials from environment variables.
- * If any TIGRIS_ var is set, use TIGRIS_ vars exclusively.
- * Otherwise, fall back to AWS_ vars.
- * Returns the resolved credentials along with the env var family ('tigris' | 'aws').
+ * AWS_ vars take priority over TIGRIS_ vars.
+ * Within each family, both key and secret must be present.
+ * Returns the resolved credentials along with the env var family ('aws' | 'tigris').
  */
 export function getEnvCredentials(): EnvCredentials | null {
-  // Check TIGRIS_ vars first — if either is set, stay in TIGRIS mode exclusively
+  // Check AWS_ vars first
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    const endpoint =
+      process.env.AWS_ENDPOINT_URL_S3 || DEFAULT_STORAGE_ENDPOINT;
+    return {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      endpoint,
+      source: 'aws',
+    };
+  }
+
+  // Fall back to TIGRIS_ vars
   if (
-    process.env.TIGRIS_STORAGE_ACCESS_KEY_ID ||
+    process.env.TIGRIS_STORAGE_ACCESS_KEY_ID &&
     process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY
   ) {
-    const accessKeyId = process.env.TIGRIS_STORAGE_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY;
-
-    if (!accessKeyId || !secretAccessKey) {
-      return null;
-    }
-
     const endpoint =
       process.env.TIGRIS_STORAGE_ENDPOINT || DEFAULT_STORAGE_ENDPOINT;
-
-    return { accessKeyId, secretAccessKey, endpoint, source: 'tigris' };
+    return {
+      accessKeyId: process.env.TIGRIS_STORAGE_ACCESS_KEY_ID,
+      secretAccessKey: process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY,
+      endpoint,
+      source: 'tigris',
+    };
   }
 
-  // Fall back to AWS_ vars
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-
-  if (!accessKeyId || !secretAccessKey) {
-    return null;
-  }
-
-  const endpoint = process.env.AWS_ENDPOINT_URL_S3 || DEFAULT_STORAGE_ENDPOINT;
-
-  return { accessKeyId, secretAccessKey, endpoint, source: 'aws' };
+  return null;
 }
 
 /**
