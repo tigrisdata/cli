@@ -234,8 +234,8 @@ describe('auth/storage', () => {
         },
       });
 
-      const storage = await import('../../src/auth/storage.js');
-      expect(storage.getCredentials()?.accessKeyId).toBe('TEMP');
+      const provider = await import('../../src/auth/provider.js');
+      expect(provider.getCredentials()?.accessKeyId).toBe('TEMP');
     });
 
     it('falls back to saved when no temporary', async () => {
@@ -250,14 +250,14 @@ describe('auth/storage', () => {
         },
       });
 
-      const storage = await import('../../src/auth/storage.js');
-      expect(storage.getCredentials()?.accessKeyId).toBe('SAVED');
+      const provider = await import('../../src/auth/provider.js');
+      expect(provider.getCredentials()?.accessKeyId).toBe('SAVED');
     });
 
     it('returns null when no credentials exist', async () => {
       writeRawConfig({ version: 2 });
-      const storage = await import('../../src/auth/storage.js');
-      expect(storage.getCredentials()).toBeNull();
+      const provider = await import('../../src/auth/provider.js');
+      expect(provider.getCredentials()).toBeNull();
     });
   });
 

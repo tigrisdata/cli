@@ -12,9 +12,8 @@ import {
 } from '../constants.js';
 import { getAuth0Config, getAuthClient } from './client.js';
 import {
+  type CredentialsConfig,
   getAwsProfileConfig,
-  getCredentials,
-  getEnvCredentials,
   getLoginMethod as getStoredLoginMethod,
   getSelectedOrganization,
   getStoredCredentials,
@@ -48,6 +47,75 @@ export function getTigrisConfig(): TigrisConfig {
 const tigrisConfig = getTigrisConfig();
 const auth0Config = getAuth0Config();
 
+// ---------------------------------------------------------------------------
+// Environment credential helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Return which env var family is providing credentials ('tigris' | 'aws' | null)
+ */
+export function getEnvCredentialSource(): 'tigris' | 'aws' | null {
+  if (
+    process.env.TIGRIS_STORAGE_ACCESS_KEY_ID ||
+    process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY
+  ) {
+    return 'tigris';
+  }
+  if (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_SECRET_ACCESS_KEY) {
+    return 'aws';
+  }
+  return null;
+}
+
+/**
+ * Get credentials from environment variables.
+ * If any TIGRIS_ var is set, use TIGRIS_ vars exclusively.
+ * Otherwise, fall back to AWS_ vars.
+ */
+export function getEnvCredentials(): CredentialsConfig | null {
+  // Check TIGRIS_ vars first
+  if (
+    process.env.TIGRIS_STORAGE_ACCESS_KEY_ID ||
+    process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY
+  ) {
+    const accessKeyId = process.env.TIGRIS_STORAGE_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY;
+
+    if (!accessKeyId || !secretAccessKey) {
+      return null;
+    }
+
+    const endpoint =
+      process.env.TIGRIS_STORAGE_ENDPOINT || DEFAULT_STORAGE_ENDPOINT;
+
+    return { accessKeyId, secretAccessKey, endpoint };
+  }
+
+  // Fall back to AWS_ vars
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  if (!accessKeyId || !secretAccessKey) {
+    return null;
+  }
+
+  const endpoint = process.env.AWS_ENDPOINT_URL_S3 || DEFAULT_STORAGE_ENDPOINT;
+
+  return { accessKeyId, secretAccessKey, endpoint };
+}
+
+/**
+ * Get non-login credentials in priority order:
+ * 1. Environment variables (TIGRIS_ACCESS_KEY / AWS_ACCESS_KEY_ID)
+ * 2. Stored credentials (temporary from login, then saved from configure)
+ *
+ * Note: AWS profile and login method checks are handled separately.
+ * Full resolution order: AWS_PROFILE → login → env vars → configured
+ */
+export function getCredentials(): CredentialsConfig | null {
+  return getEnvCredentials() || getStoredCredentials() || null;
+}
+
 /**
  * Trigger interactive login when not authenticated and stdin is a TTY.
  * Returns true if login was triggered, false if non-interactive or already attempted.
@@ -72,6 +140,92 @@ export async function getLoginMethod(): Promise<
   return getStoredLoginMethod();
 }
 
+// ---------------------------------------------------------------------------
+// Auth method resolution — single source of truth for auth priority
+// ---------------------------------------------------------------------------
+
+export type AuthMethod =
+  | {
+      type: 'aws-profile';
+      profile: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+    }
+  | { type: 'oauth' }
+  | { type: 'credentials'; accessKeyId: string; secretAccessKey: string }
+  | {
+      type: 'environment';
+      accessKeyId: string;
+      secretAccessKey: string;
+      source: 'tigris' | 'aws';
+    }
+  | { type: 'configured'; accessKeyId: string; secretAccessKey: string }
+  | { type: 'none' };
+
+/**
+ * Resolve which auth method is active, following the same priority as getStorageConfig().
+ * 1. AWS Profile  2. OAuth login  3. Credentials login  4. Env vars  5. Configured
+ */
+export async function resolveAuthMethod(): Promise<AuthMethod> {
+  // 1. AWS profile
+  if (hasAwsProfile()) {
+    const profile = process.env.AWS_PROFILE || 'default';
+    const resolved = await fromIni({ profile })();
+    return {
+      type: 'aws-profile',
+      profile,
+      accessKeyId: resolved.accessKeyId,
+      secretAccessKey: resolved.secretAccessKey,
+    };
+  }
+
+  // 2–3. Login (oauth or credentials)
+  const loginMethod = getStoredLoginMethod();
+
+  if (loginMethod === 'oauth') {
+    return { type: 'oauth' };
+  }
+
+  if (loginMethod === 'credentials') {
+    const stored = getStoredCredentials();
+    if (stored) {
+      return {
+        type: 'credentials',
+        accessKeyId: stored.accessKeyId,
+        secretAccessKey: stored.secretAccessKey,
+      };
+    }
+  }
+
+  // 4. Env vars
+  const envCreds = getEnvCredentials();
+  if (envCreds) {
+    const source = getEnvCredentialSource();
+    return {
+      type: 'environment',
+      accessKeyId: envCreds.accessKeyId,
+      secretAccessKey: envCreds.secretAccessKey,
+      source: source ?? 'aws',
+    };
+  }
+
+  // 5. Configured credentials
+  const configured = getStoredCredentials();
+  if (configured) {
+    return {
+      type: 'configured',
+      accessKeyId: configured.accessKeyId,
+      secretAccessKey: configured.secretAccessKey,
+    };
+  }
+
+  return { type: 'none' };
+}
+
+// ---------------------------------------------------------------------------
+// Storage config
+// ---------------------------------------------------------------------------
+
 export type TigrisStorageConfig = {
   bucket?: string;
   accessKeyId?: string;
@@ -92,99 +246,89 @@ export type TigrisStorageConfig = {
 export async function getStorageConfig(options?: {
   withCredentialProvider?: boolean;
 }): Promise<TigrisStorageConfig> {
-  // 1. AWS profile (only if AWS_PROFILE is set)
-  if (hasAwsProfile()) {
-    const profile = process.env.AWS_PROFILE || 'default';
-    const profileConfig = await getAwsProfileConfig(profile);
-    const resolved = await fromIni({ profile })();
-    return {
-      accessKeyId: resolved.accessKeyId,
-      secretAccessKey: resolved.secretAccessKey,
-      endpoint:
-        profileConfig.endpoint ||
-        tigrisConfig.endpoint ||
-        DEFAULT_STORAGE_ENDPOINT,
-      iamEndpoint: profileConfig.iamEndpoint || tigrisConfig.iamEndpoint,
-    };
-  }
+  const method = await resolveAuthMethod();
 
-  // 2. Login (oauth or credentials)
-  const loginMethod = await getLoginMethod();
-
-  if (loginMethod === 'oauth') {
-    const authClient = getAuthClient();
-    const selectedOrg = getSelectedOrganization();
-
-    if (!selectedOrg) {
-      throw new Error(
-        'No organization selected. Please run "tigris orgs select" first.'
-      );
+  switch (method.type) {
+    case 'aws-profile': {
+      const profileConfig = await getAwsProfileConfig(method.profile);
+      return {
+        accessKeyId: method.accessKeyId,
+        secretAccessKey: method.secretAccessKey,
+        endpoint:
+          profileConfig.endpoint ||
+          tigrisConfig.endpoint ||
+          DEFAULT_STORAGE_ENDPOINT,
+        iamEndpoint: profileConfig.iamEndpoint || tigrisConfig.iamEndpoint,
+      };
     }
 
-    return {
-      sessionToken: await authClient.getAccessToken(),
-      accessKeyId: '',
-      secretAccessKey: '',
-      // Only include credentialProvider for long-running operations (uploads)
-      // that need token refresh. Short-lived operations (ls, rm, head) use
-      // the static sessionToken above and benefit from S3Client caching.
-      ...(options?.withCredentialProvider && {
-        credentialProvider: async () => ({
-          accessKeyId: '',
-          secretAccessKey: '',
-          sessionToken: await authClient.getAccessToken(),
-          expiration: new Date(Date.now() + 10 * 60 * 1000),
-        }),
-      }),
-      endpoint: tigrisConfig.endpoint,
-      organizationId: selectedOrg,
-      iamEndpoint: tigrisConfig.iamEndpoint,
-      authDomain: auth0Config.domain,
-    };
-  }
+    case 'oauth': {
+      const authClient = getAuthClient();
+      const selectedOrg = getSelectedOrganization();
 
-  if (loginMethod === 'credentials') {
-    const loginCredentials = getStoredCredentials();
-    if (loginCredentials) {
+      if (!selectedOrg) {
+        throw new Error(
+          'No organization selected. Please run "tigris orgs select" first.'
+        );
+      }
+
+      return {
+        sessionToken: await authClient.getAccessToken(),
+        accessKeyId: '',
+        secretAccessKey: '',
+        // Only include credentialProvider for long-running operations (uploads)
+        // that need token refresh. Short-lived operations (ls, rm, head) use
+        // the static sessionToken above and benefit from S3Client caching.
+        ...(options?.withCredentialProvider && {
+          credentialProvider: async () => ({
+            accessKeyId: '',
+            secretAccessKey: '',
+            sessionToken: await authClient.getAccessToken(),
+            expiration: new Date(Date.now() + 10 * 60 * 1000),
+          }),
+        }),
+        endpoint: tigrisConfig.endpoint,
+        organizationId: selectedOrg,
+        iamEndpoint: tigrisConfig.iamEndpoint,
+        authDomain: auth0Config.domain,
+      };
+    }
+
+    case 'credentials': {
       const selectedOrg = getSelectedOrganization();
       return {
-        accessKeyId: loginCredentials.accessKeyId,
-        secretAccessKey: loginCredentials.secretAccessKey,
-        endpoint: loginCredentials.endpoint,
+        accessKeyId: method.accessKeyId,
+        secretAccessKey: method.secretAccessKey,
+        endpoint: getStoredCredentials()?.endpoint || DEFAULT_STORAGE_ENDPOINT,
         organizationId: selectedOrg ?? undefined,
         iamEndpoint: tigrisConfig.iamEndpoint,
       };
     }
-  }
 
-  // 3. Env vars
-  const envCredentials = getEnvCredentials();
-  if (envCredentials) {
-    return {
-      accessKeyId: envCredentials.accessKeyId,
-      secretAccessKey: envCredentials.secretAccessKey,
-      endpoint: envCredentials.endpoint,
-    };
-  }
+    case 'environment':
+      return {
+        accessKeyId: method.accessKeyId,
+        secretAccessKey: method.secretAccessKey,
+        endpoint: getEnvCredentials()?.endpoint || DEFAULT_STORAGE_ENDPOINT,
+      };
 
-  // 4. Configured credentials
-  const credentials = getStoredCredentials();
+    case 'configured':
+      return {
+        accessKeyId: method.accessKeyId,
+        secretAccessKey: method.secretAccessKey,
+        endpoint: getStoredCredentials()?.endpoint || DEFAULT_STORAGE_ENDPOINT,
+      };
 
-  if (credentials) {
-    return {
-      accessKeyId: credentials.accessKeyId,
-      secretAccessKey: credentials.secretAccessKey,
-      endpoint: credentials.endpoint,
-    };
+    case 'none': {
+      // No valid auth method found — try auto-login in interactive terminals
+      if (await triggerAutoLogin()) {
+        return getStorageConfig(options);
+      }
+      throw new Error(
+        'Not authenticated. Please run "tigris login" or "tigris configure" first.'
+      );
+    }
   }
-
-  // No valid auth method found — try auto-login in interactive terminals
-  if (await triggerAutoLogin()) {
-    return getStorageConfig(options);
-  }
-  throw new Error(
-    'Not authenticated. Please run "tigris login" or "tigris configure" first.'
-  );
 }
 
 /**
