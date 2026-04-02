@@ -285,7 +285,8 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
           const age = now - new Date(bucket.created).getTime();
           if (age > staleThresholdMs) {
             console.log(`Sweeping stale test bucket: ${bucket.name}`);
-            runCli(`rm ${t3(bucket.name)} -r -f`);
+            runCli(`rm ${t3(bucket.name)}/* -r -f`);
+            runCli(`rm ${t3(bucket.name)} -f`);
           }
         }
       } catch {
