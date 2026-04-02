@@ -37,7 +37,7 @@ tigris login credentials
 
 ## Configured Credentials
 
-Saves access-key credentials permanently to `~/.tigris/config.json`. These persist across login/logout cycles and are used as a fallback when no other method is active.
+Saves access key credentials permanently to `~/.tigris/config.json`. These persist across login/logout cycles and are used as a fallback when no other login method is active.
 
 ```sh
 tigris configure --access-key tid_AaBb --access-secret tsec_XxYy
@@ -81,7 +81,7 @@ You can override service endpoints independently:
 |----------|-------------|---------|
 | `AWS_ENDPOINT_URL_S3` | Storage endpoint | `https://t3.storage.dev` |
 | `AWS_ENDPOINT_URL_IAM` | IAM endpoint | `https://iam.storageapi.dev` |
-| `TIGRIS_STORAGE_ENDPOINT` | Storage endpoint (fallback) | `https://t3.storage.dev` |
+| `TIGRIS_STORAGE_ENDPOINT` | Storage endpoint  | `https://t3.storage.dev` |
 | `TIGRIS_IAM_ENDPOINT` | IAM endpoint (fallback) | `https://iam.storageapi.dev` |
 
 AWS_ endpoint variables take priority over TIGRIS_ endpoint variables.
