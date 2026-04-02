@@ -31,23 +31,18 @@ function checkUnknownSubcommand(
 
   const first = positional[0];
   const subcommands = spec.commands ?? [];
+  const implemented = subcommands.filter((c) =>
+    commandHasAnyImplementation(c, [...currentPath, c.name], hasImplementation)
+  );
   const knownNames = new Set(
-    subcommands.flatMap((c) => [
+    implemented.flatMap((c) => [
       c.name,
       ...(Array.isArray(c.alias) ? c.alias : c.alias ? [c.alias] : []),
     ])
   );
 
   if (!knownNames.has(first)) {
-    const available = subcommands
-      .filter((c) =>
-        commandHasAnyImplementation(
-          c,
-          [...currentPath, c.name],
-          hasImplementation
-        )
-      )
-      .map((c) => c.name);
+    const available = implemented.map((c) => c.name);
     const pathLabel =
       currentPath.length > 0
         ? `'${first}' for '${currentPath.join(' ')}'`
