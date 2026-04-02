@@ -448,11 +448,16 @@ export async function clearTemporaryCredentials(): Promise<void> {
 }
 
 /**
- * Clear all OAuth data (tokens, organizations, selectedOrganization)
+ * Clear all OAuth data (tokens, organizations, selectedOrganization).
+ * Also clears activeMethod when it's 'oauth' to prevent broken state
+ * where resolveAuthMethod() returns oauth but no tokens exist.
  */
 export async function clearOAuthData(): Promise<void> {
   const config = readConfig();
   delete config.oauth;
+  if (config.activeMethod === 'oauth') {
+    delete config.activeMethod;
+  }
   await writeConfig(config);
 }
 

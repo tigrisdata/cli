@@ -443,7 +443,7 @@ describe('auth/storage', () => {
   // clearOAuthData
   // ---------------------------------------------------------------------------
   describe('clearOAuthData', () => {
-    it('removes all OAuth data while preserving credentials', async () => {
+    it('removes OAuth data and clears activeMethod when it is oauth', async () => {
       writeRawConfig({
         version: 2,
         activeMethod: 'oauth',
@@ -467,7 +467,24 @@ describe('auth/storage', () => {
       const raw = readRawConfig() as Record<string, unknown>;
       expect(raw['oauth']).toBeUndefined();
       expect(raw['credentials']).toBeDefined();
-      expect(raw['activeMethod']).toBe('oauth');
+      expect(raw['activeMethod']).toBeUndefined();
+    });
+
+    it('preserves activeMethod when it is not oauth', async () => {
+      writeRawConfig({
+        version: 2,
+        activeMethod: 'credentials',
+        oauth: {
+          tokens: { accessToken: 't', expiresAt: 1 },
+        },
+      });
+
+      const storage = await import('../../src/auth/storage.js');
+      await storage.clearOAuthData();
+
+      const raw = readRawConfig() as Record<string, unknown>;
+      expect(raw['oauth']).toBeUndefined();
+      expect(raw['activeMethod']).toBe('credentials');
     });
 
     it('does nothing when no OAuth data exists', async () => {
