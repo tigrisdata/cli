@@ -271,7 +271,7 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
     }
 
     // Sweep stale test buckets from previous failed runs
-    const staleThresholdMs = 2 * 60 * 60 * 1000; // 2 hours
+    const staleThresholdMs = 30 * 60 * 1000; // 30 minutes
     const listResult = runCli('buckets list --format json');
     if (listResult.exitCode === 0 && listResult.stdout.trim()) {
       try {
