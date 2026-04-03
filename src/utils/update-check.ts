@@ -111,10 +111,10 @@ export function getUpdateCommand(): string {
     (globalThis as { __TIGRIS_BINARY?: boolean }).__TIGRIS_BINARY === true;
   const isWindows = process.platform === 'win32';
 
-  if (isHomebrewInstall()) {
-    return 'brew upgrade tigris';
-  } else if (!isBinary) {
+  if (!isBinary) {
     return 'npm install -g @tigrisdata/cli';
+  } else if (isHomebrewInstall()) {
+    return 'brew upgrade tigris';
   } else if (isWindows) {
     return 'irm https://raw.githubusercontent.com/tigrisdata/cli/main/scripts/install.ps1 | iex';
   } else {
