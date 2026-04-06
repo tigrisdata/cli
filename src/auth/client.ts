@@ -293,7 +293,7 @@ export class TigrisAuthClient {
       tokenSet = tokens;
     }
 
-    if (!tokenSet) {
+    if (!tokenSet?.refreshToken) {
       throw new Error(
         'No refresh token available. Please run "tigris login" to re-authenticate.'
       );
@@ -306,7 +306,7 @@ export class TigrisAuthClient {
         body: new URLSearchParams({
           client_id: this.config.clientId,
           grant_type: 'refresh_token',
-          refresh_token: tokenSet.refreshToken!,
+          refresh_token: tokenSet.refreshToken,
           scope: 'openid profile email offline_access',
         }),
       });
