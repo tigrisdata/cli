@@ -90,7 +90,7 @@
     ]
   },
   "dependencies": {
-    "@aws-sdk/credential-providers": "^3.1018.0",
+    "@aws-sdk/credential-providers": "^3.1024.0",
     "@smithy/shared-ini-file-loader": "^4.4.7",
     "@tigrisdata/iam": "^1.4.1",
     "@tigrisdata/storage": "^2.15.6",
@@ -104,11 +104,9 @@
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
     "@types/node": "^22.19.11",
-    "dotenv": "^17.3.1",
-    "eslint": "^10.1.0",
+    "dotenv": "^17.4.1",
+    "eslint": "^10.2.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "husky": "^9.1.7",
     "prettier": "^3.8.1",
@@ -117,7 +115,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.2",
+    "typescript-eslint": "^8.58.0",
     "vitest": "^4.1.2"
   }
 }
