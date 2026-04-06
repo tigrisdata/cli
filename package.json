@@ -73,11 +73,17 @@
       }
     ],
     "plugins": [
-      ["@semantic-release/commit-analyzer", {
-        "releaseRules": [
-          { "type": "refactor", "release": "patch" }
-        ]
-      }],
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "releaseRules": [
+            {
+              "type": "refactor",
+              "release": "patch"
+            }
+          ]
+        }
+      ],
       "@semantic-release/release-notes-generator",
       "@semantic-release/github",
       "@semantic-release/npm"
@@ -88,7 +94,6 @@
     "@smithy/shared-ini-file-loader": "^4.4.7",
     "@tigrisdata/iam": "^1.4.1",
     "@tigrisdata/storage": "^2.15.6",
-    "axios": "^1.13.6",
     "commander": "^14.0.3",
     "enquirer": "^2.4.1",
     "jose": "^6.2.2",
