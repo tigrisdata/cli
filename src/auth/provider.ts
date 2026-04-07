@@ -91,18 +91,6 @@ export function getEnvCredentials(): EnvCredentials | null {
 }
 
 /**
- * Get non-login credentials in priority order:
- * 1. Environment variables (AWS_ACCESS_KEY_ID / TIGRIS_STORAGE_ACCESS_KEY_ID)
- * 2. Stored credentials (temporary from login, then saved from configure)
- *
- * Note: AWS profile and login method checks are handled separately.
- * Full resolution order: AWS_PROFILE → env vars → oauth → credentials login → configured
- */
-export function getCredentials(): CredentialsConfig | null {
-  return getEnvCredentials() || getStoredCredentials() || null;
-}
-
-/**
  * Trigger interactive login when not authenticated and stdin is a TTY.
  * Returns true if login was triggered, false if non-interactive or already attempted.
  */
@@ -115,15 +103,6 @@ async function triggerAutoLogin(): Promise<boolean> {
   await login({});
   console.log();
   return true;
-}
-
-/**
- * Get the login method used by the user
- */
-export async function getLoginMethod(): Promise<
-  'oauth' | 'credentials' | null
-> {
-  return getStoredLoginMethod();
 }
 
 // ---------------------------------------------------------------------------
@@ -341,7 +320,7 @@ export function requireOAuthLogin(operation: string): boolean {
   const loginMethod = getStoredLoginMethod();
   if (loginMethod === 'oauth') return false;
 
-  if (getCredentials()) {
+  if (getEnvCredentials() || getStoredCredentials()) {
     console.log(
       `You are using access key credentials, which belong to a single organization.\n` +
         `${operation} is only available with OAuth login.\n\n` +
