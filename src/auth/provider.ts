@@ -279,12 +279,16 @@ export async function getStorageConfig(options?: {
         endpoint: getEnvCredentials()?.endpoint || DEFAULT_STORAGE_ENDPOINT,
       };
 
-    case 'configured':
+    case 'configured': {
+      const selectedOrg = getSelectedOrganization();
       return {
         accessKeyId: method.accessKeyId,
         secretAccessKey: method.secretAccessKey,
         endpoint: getStoredCredentials()?.endpoint || DEFAULT_STORAGE_ENDPOINT,
+        organizationId: selectedOrg ?? undefined,
+        iamEndpoint: tigrisConfig.iamEndpoint,
       };
+    }
 
     case 'none': {
       // No valid auth method found — try auto-login in interactive terminals
