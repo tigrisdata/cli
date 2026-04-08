@@ -17,7 +17,7 @@ export default async function list(options: Record<string, unknown>) {
   printStart(context);
 
   const format = getFormat(options);
-  const { limit, pageToken, isPaginated } = getPaginationOptions(options);
+  const { limit, pageToken } = getPaginationOptions(options);
 
   const iamConfig = await getOAuthIAMConfig(context);
 
@@ -62,7 +62,7 @@ export default async function list(options: Record<string, unknown>) {
 
   const nextToken = data.paginationToken || undefined;
 
-  const output = isPaginated
+  const output = nextToken
     ? formatPaginatedOutput(policies, format!, 'policies', 'policy', columns, {
         paginationToken: nextToken,
       })
@@ -70,7 +70,7 @@ export default async function list(options: Record<string, unknown>) {
 
   console.log(output);
 
-  if (isPaginated && format !== 'json' && format !== 'xml') {
+  if (format !== 'json' && format !== 'xml') {
     printPaginationHint(nextToken);
   }
 

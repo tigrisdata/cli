@@ -29,7 +29,7 @@ export default async function listObjects(options: Record<string, unknown>) {
     'snapshotVersion',
     'snapshot',
   ]);
-  const { limit, pageToken, isPaginated } = getPaginationOptions(options);
+  const { limit, pageToken } = getPaginationOptions(options);
 
   if (!bucketArg) {
     failWithError(context, 'Bucket name is required');
@@ -75,7 +75,7 @@ export default async function listObjects(options: Record<string, unknown>) {
 
   const nextToken = data.paginationToken || undefined;
 
-  const output = isPaginated
+  const output = nextToken
     ? formatPaginatedOutput(objects, format!, 'objects', 'object', columns, {
         paginationToken: nextToken,
       })
@@ -83,7 +83,7 @@ export default async function listObjects(options: Record<string, unknown>) {
 
   console.log(output);
 
-  if (isPaginated && format !== 'json' && format !== 'xml') {
+  if (format !== 'json' && format !== 'xml') {
     printPaginationHint(nextToken);
   }
 

@@ -28,7 +28,7 @@ export default async function list(options: Record<string, unknown>) {
   }
 
   const { data, error } = await listBuckets({
-    ...(forksOf || !isPaginated
+    ...(forksOf
       ? {}
       : {
           ...(limit !== undefined ? { limit } : {}),
@@ -99,7 +99,7 @@ export default async function list(options: Record<string, unknown>) {
 
   const nextToken = data.paginationToken || undefined;
 
-  const output = isPaginated
+  const output = nextToken
     ? formatPaginatedOutput(buckets, format!, 'buckets', 'bucket', columns, {
         paginationToken: nextToken,
       })
@@ -107,7 +107,7 @@ export default async function list(options: Record<string, unknown>) {
 
   console.log(output);
 
-  if (isPaginated && format !== 'json' && format !== 'xml') {
+  if (format !== 'json' && format !== 'xml') {
     printPaginationHint(nextToken);
   }
 
