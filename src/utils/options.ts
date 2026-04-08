@@ -44,7 +44,8 @@ export interface PaginationOptions {
 export function getPaginationOptions(
   options: Record<string, unknown>
 ): PaginationOptions {
-  const limit = getOption<number>(options, ['limit']);
+  const rawLimit = getOption<string | number>(options, ['limit']);
+  const limit = rawLimit !== undefined ? Number(rawLimit) : undefined;
   const pageToken = getOption<string>(options, [
     'page-token',
     'pageToken',

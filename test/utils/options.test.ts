@@ -115,4 +115,13 @@ describe('getPaginationOptions', () => {
       isPaginated: true,
     });
   });
+
+  it('coerces string limit from Commander to number', () => {
+    const result = getPaginationOptions({ limit: '10' });
+    expect(result).toEqual({
+      limit: 10,
+      pageToken: undefined,
+      isPaginated: true,
+    });
+  });
 });
