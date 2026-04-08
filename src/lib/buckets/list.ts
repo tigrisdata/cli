@@ -57,7 +57,7 @@ export default async function list(options: Record<string, unknown>) {
       failWithError(context, infoError);
     }
 
-    if (!bucketInfo.hasForks) {
+    if (!bucketInfo.forkInfo?.hasChildren) {
       printEmpty(context);
       return;
     }
@@ -67,7 +67,10 @@ export default async function list(options: Record<string, unknown>) {
     for (const bucket of data.buckets) {
       if (bucket.name === forksOf) continue;
       const { data: info } = await getBucketInfo(bucket.name, { config });
-      if (info?.sourceBucketName === forksOf) {
+      const isChildOf = info?.forkInfo?.parents?.some(
+        (p) => p.bucketName === forksOf
+      );
+      if (isChildOf) {
         forks.push({ name: bucket.name, created: bucket.creationDate });
       }
     }
