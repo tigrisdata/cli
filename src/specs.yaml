@@ -292,6 +292,11 @@ commands:
         description: Output format
         options: [json, table, xml]
         default: table
+      - name: limit
+        description: Maximum number of items to return per page
+      - name: page-token
+        description: Pagination token from a previous request to fetch the next page
+        alias: pt
 
   # mk
   - name: mk
