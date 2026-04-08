@@ -275,12 +275,11 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
     const listResult = runCli('buckets list --format json');
     if (listResult.exitCode === 0 && listResult.stdout.trim()) {
       try {
-        const buckets = JSON.parse(listResult.stdout.trim()) as Array<{
-          name: string;
-          created: string;
-        }>;
+        const parsed = JSON.parse(listResult.stdout.trim()) as {
+          items: Array<{ name: string; created: string }>;
+        };
         const now = Date.now();
-        for (const bucket of buckets) {
+        for (const bucket of parsed.items) {
           if (!bucket.name.startsWith('tigris-cli-test-')) continue;
           const age = now - new Date(bucket.created).getTime();
           if (age > staleThresholdMs) {
