@@ -1,11 +1,7 @@
 import { getStorageConfig } from '@auth/provider.js';
 import { list, listBuckets } from '@tigrisdata/storage';
 import { exitWithError } from '@utils/exit.js';
-import {
-  formatOutput,
-  formatPaginatedOutput,
-  formatSize,
-} from '@utils/format.js';
+import { formatPaginatedOutput, formatSize } from '@utils/format.js';
 import { printPaginationHint } from '@utils/messages.js';
 import { getFormat, getOption, getPaginationOptions } from '@utils/options.js';
 import { parseAnyPath } from '@utils/path.js';
@@ -45,11 +41,14 @@ export default async function ls(options: Record<string, unknown>) {
 
     const nextToken = data.paginationToken || undefined;
 
-    const output = nextToken
-      ? formatPaginatedOutput(buckets, format!, 'buckets', 'bucket', columns, {
-          paginationToken: nextToken,
-        })
-      : formatOutput(buckets, format!, 'buckets', 'bucket', columns);
+    const output = formatPaginatedOutput(
+      buckets,
+      format!,
+      'buckets',
+      'bucket',
+      columns,
+      { paginationToken: nextToken }
+    );
 
     console.log(output);
 
@@ -117,11 +116,14 @@ export default async function ls(options: Record<string, unknown>) {
 
   const nextToken = data.paginationToken || undefined;
 
-  const output = nextToken
-    ? formatPaginatedOutput(objects, format!, 'objects', 'object', columns, {
-        paginationToken: nextToken,
-      })
-    : formatOutput(objects, format!, 'objects', 'object', columns);
+  const output = formatPaginatedOutput(
+    objects,
+    format!,
+    'objects',
+    'object',
+    columns,
+    { paginationToken: nextToken }
+  );
 
   console.log(output);
 

@@ -1,7 +1,7 @@
 import { getIAMConfig } from '@auth/iam.js';
 import { listAccessKeys } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
-import { formatOutput, formatPaginatedOutput } from '@utils/format.js';
+import { formatPaginatedOutput } from '@utils/format.js';
 import {
   msg,
   printEmpty,
@@ -52,11 +52,9 @@ export default async function list(options: Record<string, unknown>) {
 
   const nextToken = data.paginationToken || undefined;
 
-  const output = nextToken
-    ? formatPaginatedOutput(keys, format!, 'keys', 'key', columns, {
-        paginationToken: nextToken,
-      })
-    : formatOutput(keys, format!, 'keys', 'key', columns);
+  const output = formatPaginatedOutput(keys, format!, 'keys', 'key', columns, {
+    paginationToken: nextToken,
+  });
 
   console.log(output);
 

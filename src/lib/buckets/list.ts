@@ -99,11 +99,14 @@ export default async function list(options: Record<string, unknown>) {
 
   const nextToken = data.paginationToken || undefined;
 
-  const output = nextToken
-    ? formatPaginatedOutput(buckets, format!, 'buckets', 'bucket', columns, {
-        paginationToken: nextToken,
-      })
-    : formatOutput(buckets, format!, 'buckets', 'bucket', columns);
+  const output = formatPaginatedOutput(
+    buckets,
+    format!,
+    'buckets',
+    'bucket',
+    columns,
+    { paginationToken: nextToken }
+  );
 
   console.log(output);
 
