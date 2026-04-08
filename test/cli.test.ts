@@ -1156,10 +1156,10 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
       const result = runCli('buckets list --format json');
       expect(result.exitCode).toBe(0);
       const parsed = JSON.parse(result.stdout.trim());
-      expect(Array.isArray(parsed)).toBe(true);
-      expect(parsed.some((b: { name: string }) => b.name === testBucket)).toBe(
-        true
-      );
+      expect(Array.isArray(parsed.items)).toBe(true);
+      expect(
+        parsed.items.some((b: { name: string }) => b.name === testBucket)
+      ).toBe(true);
     });
   });
 
@@ -1810,10 +1810,10 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
       const result = runCli(`snapshots list ${snapBucket} --format json`);
       expect(result.exitCode).toBe(0);
       const parsed = JSON.parse(result.stdout.trim());
-      expect(Array.isArray(parsed)).toBe(true);
-      expect(parsed.length).toBeGreaterThan(0);
+      expect(Array.isArray(parsed.items)).toBe(true);
+      expect(parsed.items.length).toBeGreaterThan(0);
       // Save version for later tests
-      snapshotVersion = parsed[0].version;
+      snapshotVersion = parsed.items[0].version;
       expect(snapshotVersion).toBeTruthy();
     });
 
