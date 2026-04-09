@@ -5,12 +5,13 @@ import {
   attachPolicyToAccessKey,
   getPolicy,
   listAccessKeys,
-  listPolicies,
 } from '@tigrisdata/iam';
 import { failWithError } from '@utils/exit.js';
 import { requireInteractive } from '@utils/interactive.js';
-import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
+import { msg, printStart, printSuccess } from '@utils/messages.js';
 import { getFormat, getOption } from '@utils/options.js';
+
+import { selectPolicy } from './select-policy.js';
 
 const context = msg('iam policies', 'link-key');
 
@@ -24,33 +25,9 @@ export default async function linkKey(options: Record<string, unknown>) {
 
   const iamConfig = await getOAuthIAMConfig(context);
 
-  // If no policy ARN provided, let user select
   if (!resource) {
-    const { data: listData, error: listError } = await listPolicies({
-      config: iamConfig,
-    });
-
-    if (listError) {
-      failWithError(context, listError);
-    }
-
-    if (!listData.policies || listData.policies.length === 0) {
-      printEmpty(context);
-      return;
-    }
-
-    requireInteractive('Provide the policy ARN as a positional argument');
-
-    const { selected } = await prompt<{ selected: string }>({
-      type: 'select',
-      name: 'selected',
-      message: 'Select a policy:',
-      choices: listData.policies.map((p) => ({
-        name: p.resource,
-        message: `${p.name} (${p.resource})`,
-      })),
-    });
-
+    const selected = await selectPolicy(iamConfig, context);
+    if (!selected) return;
     resource = selected;
   }
 
