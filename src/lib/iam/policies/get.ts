@@ -82,7 +82,7 @@ export default async function get(options: Record<string, unknown>) {
   if (data.users && data.users.length > 0) {
     console.log('Attached Users:');
     for (const user of data.users) {
-      console.log(`  - ${user}`);
+      console.log(`  - ${user.name} (${user.id})`);
     }
     console.log();
   }
