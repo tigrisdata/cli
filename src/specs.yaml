@@ -1494,6 +1494,28 @@ commands:
           - name: revoke-roles
             description: Revoke all bucket roles from the access key
             type: flag
+      - name: rotate
+        description: Rotate an access key's secret. The current secret is immediately invalidated and a new one is returned (shown only once)
+        alias: r
+        examples:
+          - "tigris access-keys rotate tid_AaBbCcDdEeFf --yes"
+        messages:
+          onStart: 'Rotating access key...'
+          onSuccess: 'Access key rotated'
+          onFailure: 'Failed to rotate access key'
+          nextActions:
+            - command: 'tigris access-keys get {{id}}'
+              description: 'Verify the rotated access key'
+        arguments:
+          - name: id
+            description: Access key ID
+            type: positional
+            required: true
+            examples:
+              - tid_AaBbCcDdEeFf
+          - name: force
+            type: flag
+            description: Skip confirmation prompts (alias for --yes)
 
   #########################
   # IAM - Identity and Access Management
