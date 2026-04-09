@@ -48,7 +48,9 @@ export default async function linkKey(options: Record<string, unknown>) {
       failWithError(context, policyResult.error);
     }
 
-    const attachedIds = new Set(policyResult.data.users.map((u) => u.id));
+    const attachedIds = new Set(
+      (policyResult.data.users ?? []).map((u) => u.id)
+    );
     const available = keysResult.data.accessKeys.filter(
       (k) => !attachedIds.has(k.id)
     );
