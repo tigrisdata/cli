@@ -567,7 +567,7 @@ commands:
           - my-bucket
           - t3://my-bucket
       - name: keys
-        description: "Comma-separated object keys, or path to a file with one key per line. If omitted, reads keys from stdin"
+        description: "Comma-separated object keys, or path to a file with one key per line. If a local file matching the value exists, it is read as a keys file. If omitted, reads keys from stdin"
         alias: k
       - name: output
         description: Output file path. Defaults to stdout (for piping)

@@ -1,21 +1,13 @@
 import { getStorageConfig } from '@auth/provider.js';
 import { bundle } from '@tigrisdata/storage';
 import { exitWithError } from '@utils/exit.js';
-import { getFormat, getOption } from '@utils/options.js';
+import { getFormat, getOption, readStdin } from '@utils/options.js';
 import { parseAnyPath } from '@utils/path.js';
 import { createWriteStream, existsSync, readFileSync } from 'fs';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
 
 const MAX_KEYS = 5000;
-
-async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) {
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks).toString('utf-8');
-}
 
 function parseKeys(content: string): string[] {
   return content
@@ -65,13 +57,18 @@ export default async function bundleCommand(options: Record<string, unknown>) {
   let keys: string[];
 
   if (keysArg) {
-    if (existsSync(keysArg)) {
-      keys = parseKeys(readFileSync(keysArg, 'utf-8'));
-    } else {
+    if (keysArg.includes(',')) {
+      // Commas present → always treat as inline comma-separated keys
       keys = keysArg
         .split(',')
         .map((k) => k.trim())
         .filter((k) => k.length > 0);
+    } else if (existsSync(keysArg)) {
+      // No commas and local file exists → read as keys file
+      keys = parseKeys(readFileSync(keysArg, 'utf-8'));
+    } else {
+      // Single key
+      keys = [keysArg.trim()];
     }
   } else if (!process.stdin.isTTY) {
     const input = await readStdin();
