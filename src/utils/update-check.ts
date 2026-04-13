@@ -106,18 +106,25 @@ function isHomebrewInstall(): boolean {
  * Returns the platform-appropriate shell command for updating the CLI.
  */
 export function getUpdateCommand(): string {
-  if (isHomebrewInstall()) {
-    return 'brew upgrade tigris';
-  }
-
   const isBinary =
     (globalThis as { __TIGRIS_BINARY?: boolean }).__TIGRIS_BINARY === true;
 
+  // npm install — process.execPath is Node, not our binary.
+  // Must come before isHomebrewInstall() to avoid false positives
+  // when Node itself was installed via Homebrew.
   if (!isBinary) {
     return 'npm install -g @tigrisdata/cli';
-  } else if (process.platform === 'win32') {
+  }
+  // Standalone binary installed via Homebrew (execPath resolves to /Cellar/ or /Caskroom/)
+  else if (isHomebrewInstall()) {
+    return 'brew upgrade tigris';
+  }
+  // Standalone binary on Windows
+  else if (process.platform === 'win32') {
     return 'irm https://github.com/tigrisdata/cli/releases/latest/download/install.ps1 | iex';
-  } else {
+  }
+  // Standalone binary on macOS/Linux (installed via curl)
+  else {
     return 'curl -fsSL https://github.com/tigrisdata/cli/releases/latest/download/install.sh | sh';
   }
 }
