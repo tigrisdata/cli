@@ -14,6 +14,7 @@ export default async function ls(options: Record<string, unknown>) {
     'snapshot',
   ]);
   const format = getFormat(options);
+  const source = getOption<'tigris' | 'shadow'>(options, ['source']);
   const { limit, pageToken } = getPaginationOptions(options);
 
   if (!pathString) {
@@ -72,7 +73,9 @@ export default async function ls(options: Record<string, unknown>) {
 
   const { data, error } = await list({
     prefix,
+    delimiter: '/',
     ...(snapshotVersion ? { snapshotVersion } : {}),
+    ...(source ? { source } : {}),
     ...(limit !== undefined ? { limit } : {}),
     ...(pageToken ? { paginationToken: pageToken } : {}),
     config: {
@@ -85,28 +88,27 @@ export default async function ls(options: Record<string, unknown>) {
     exitWithError(error);
   }
 
-  const objects = (data.items || [])
-    .map((item) => {
-      // Strip the prefix from the name for cleaner display
-      const name = prefix ? item.name.slice(prefix.length) : item.name;
+  // Common prefixes are "folders" returned by S3 when using a delimiter
+  const folders = (data.commonPrefixes || []).map((p) => {
+    const displayName = prefix ? p.slice(prefix.length) : p;
+    return {
+      key: displayName,
+      size: '-',
+      modified: '',
+    };
+  });
 
-      // For immediate children only: if name contains /, only show up to first /
-      const firstSlash = name.indexOf('/');
-      const displayName =
-        firstSlash === -1 ? name : name.slice(0, firstSlash + 1);
-      const isFolder = displayName.endsWith('/');
+  // Items are files at this level
+  const files = (data.items || []).map((item) => {
+    const displayName = prefix ? item.name.slice(prefix.length) : item.name;
+    return {
+      key: displayName,
+      size: formatSize(item.size),
+      modified: item.lastModified,
+    };
+  });
 
-      return {
-        key: displayName,
-        size: isFolder ? '-' : formatSize(item.size),
-        modified: item.lastModified,
-      };
-    })
-    // Filter out empty keys and deduplicate folders
-    .filter(
-      (item, index, arr) =>
-        item.key !== '' && arr.findIndex((i) => i.key === item.key) === index
-    );
+  const objects = [...folders, ...files];
 
   const columns = [
     { key: 'key', header: 'Key' },

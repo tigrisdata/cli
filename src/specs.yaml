@@ -297,6 +297,9 @@ commands:
       - name: page-token
         description: Pagination token from a previous request to fetch the next page
         alias: pt
+      - name: source
+        description: List objects from a specific storage source on buckets with shadow migration enabled
+        options: [tigris, shadow]
 
   # mk
   - name: mk
@@ -1236,6 +1239,9 @@ commands:
           - name: page-token
             description: Pagination token from a previous request to fetch the next page
             alias: pt
+          - name: source
+            description: List objects from a specific storage source on buckets with shadow migration enabled
+            options: [tigris, shadow]
       # get
       - name: get
         description: Download an object by key. Prints to stdout by default, or saves to a file with --output
