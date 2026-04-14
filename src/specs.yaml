@@ -943,6 +943,26 @@ commands:
           - name: disable
             description: Disable migration and clear all migration settings
             type: flag
+      # migrate
+      - name: migrate
+        description: Actively migrate all objects from a shadow bucket to Tigris by scheduling server-side migration for unmigrated objects
+        examples:
+          - "tigris buckets migrate my-bucket"
+          - "tigris buckets migrate my-bucket/images/"
+          - "tigris buckets migrate t3://my-bucket/prefix/"
+        messages:
+          onStart: ''
+          onSuccess: ''
+          onFailure: 'Migration failed'
+        arguments:
+          - name: path
+            description: Bucket name or path with optional prefix. Supports t3:// and tigris:// prefixes
+            type: positional
+            required: true
+            examples:
+              - my-bucket
+              - my-bucket/images/
+              - t3://my-bucket/prefix/
       # set-transition
       - name: set-transition
         description: Configure a lifecycle transition rule on a bucket. Automatically move objects to a different storage class after a number of days or on a specific date
