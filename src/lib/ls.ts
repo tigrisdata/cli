@@ -98,15 +98,17 @@ export default async function ls(options: Record<string, unknown>) {
     };
   });
 
-  // Items are files at this level
-  const files = (data.items || []).map((item) => {
-    const displayName = prefix ? item.name.slice(prefix.length) : item.name;
-    return {
-      key: displayName,
-      size: formatSize(item.size),
-      modified: item.lastModified,
-    };
-  });
+  // Items are files at this level (filter out empty keys from folder marker objects)
+  const files = (data.items || [])
+    .map((item) => {
+      const displayName = prefix ? item.name.slice(prefix.length) : item.name;
+      return {
+        key: displayName,
+        size: formatSize(item.size),
+        modified: item.lastModified,
+      };
+    })
+    .filter((item) => item.key !== '');
 
   const objects = [...folders, ...files];
 

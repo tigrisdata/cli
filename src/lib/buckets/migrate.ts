@@ -60,7 +60,6 @@ class PaginatedCursor {
   private index = 0;
   private token: string | undefined;
   private _done = false;
-  private fetched = false;
 
   constructor(
     private bucket: string,
@@ -86,11 +85,6 @@ class PaginatedCursor {
     this.index++;
   }
 
-  /** Number of items seen so far across all pages */
-  get itemsSeen(): number {
-    return this.fetched ? this.index : 0;
-  }
-
   private async fetchPage(): Promise<void> {
     if (this._done) return;
 
@@ -111,7 +105,6 @@ class PaginatedCursor {
     this.buffer = data.items ?? [];
     this.index = 0;
     this.token = data.paginationToken;
-    this.fetched = true;
 
     if (!data.paginationToken && !data.hasMore) {
       this._done = true;
