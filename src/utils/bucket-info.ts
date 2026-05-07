@@ -1,6 +1,38 @@
-import type { BucketInfoResponse } from '@tigrisdata/storage';
+import type {
+  BucketInfoResponse,
+  BucketLifecycleRule,
+} from '@tigrisdata/storage';
 
 import { formatSize } from './format.js';
+
+function formatLifecycleRule(rule: BucketLifecycleRule): string {
+  const parts: string[] = [];
+
+  if (rule.storageClass) {
+    if (rule.days !== undefined) {
+      parts.push(`${rule.storageClass} after ${rule.days}d`);
+    } else if (rule.date !== undefined) {
+      parts.push(`${rule.storageClass} on ${rule.date}`);
+    } else {
+      parts.push(rule.storageClass);
+    }
+  }
+
+  if (rule.expiration) {
+    if (rule.expiration.days !== undefined) {
+      parts.push(`expire after ${rule.expiration.days}d`);
+    } else if (rule.expiration.date !== undefined) {
+      parts.push(`expire on ${rule.expiration.date}`);
+    }
+  }
+
+  const annotations: string[] = [];
+  if (rule.filter?.prefix) annotations.push(`prefix=${rule.filter.prefix}`);
+  if (rule.enabled === false) annotations.push('disabled');
+
+  const head = parts.join(', ');
+  return annotations.length > 0 ? `${head} (${annotations.join(', ')})` : head;
+}
 
 export function buildBucketInfo(data: BucketInfoResponse) {
   const info: { label: string; value: string }[] = [
@@ -53,25 +85,11 @@ export function buildBucketInfo(data: BucketInfoResponse) {
     });
   }
 
-  if (data.settings.ttlConfig) {
-    info.push({
-      label: 'TTL',
-      value: data.settings.ttlConfig.enabled
-        ? data.settings.ttlConfig.days
-          ? `${data.settings.ttlConfig.days} days`
-          : (data.settings.ttlConfig.date ?? 'Enabled')
-        : 'Disabled',
-    });
-  }
-
   if (data.settings.lifecycleRules?.length) {
     info.push({
       label: 'Lifecycle Rules',
       value: data.settings.lifecycleRules
-        .map(
-          (r) =>
-            `${r.storageClass}${r.days ? ` after ${r.days}d` : ''}${r.enabled ? '' : ' (disabled)'}`
-        )
+        .map((r) => formatLifecycleRule(r))
         .join(', '),
     });
   }
