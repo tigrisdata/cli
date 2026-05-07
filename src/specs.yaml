@@ -1126,6 +1126,7 @@ commands:
   # Manage forks (removed)
   #########################
   - name: forks
+    alias: f
     removed: true
     replaced_by: 'tigris buckets create --fork-of and tigris buckets list --forks-of'
 
