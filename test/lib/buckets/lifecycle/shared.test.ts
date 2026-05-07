@@ -57,6 +57,12 @@ describe('validateRuleFieldCombinations', () => {
       )
     ).toContain('Cannot specify both --days and --date');
   });
+
+  it('rejects an empty --prefix', () => {
+    expect(validateRuleFieldCombinations({ prefix: '' })).toContain(
+      '--prefix cannot be empty'
+    );
+  });
 });
 
 describe('expirationFromInput', () => {

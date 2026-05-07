@@ -66,7 +66,7 @@ export default async function create(options: Record<string, unknown>) {
   const newRule: BucketLifecycleRule = {
     ...transition,
     ...(expiration ? { expiration } : {}),
-    ...(input.prefix ? { filter: { prefix: input.prefix } } : {}),
+    ...(input.prefix !== undefined ? { filter: { prefix: input.prefix } } : {}),
     ...(enabled !== undefined ? { enabled } : {}),
   };
 

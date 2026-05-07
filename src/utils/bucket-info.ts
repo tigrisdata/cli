@@ -5,25 +5,51 @@ import type {
 
 import { formatSize } from './format.js';
 
+/**
+ * Human-readable description of a rule's transition, or undefined if
+ * the rule has no transition target. Used by both the bucket-info
+ * "Lifecycle Rules" row and the lifecycle-list table cell.
+ */
+export function describeTransition(
+  rule: BucketLifecycleRule
+): string | undefined {
+  if (!rule.storageClass) return undefined;
+  if (rule.days !== undefined)
+    return `${rule.storageClass} after ${rule.days}d`;
+  if (rule.date !== undefined) return `${rule.storageClass} on ${rule.date}`;
+  return rule.storageClass;
+}
+
+/**
+ * Human-readable description of a rule's expiration, or undefined if
+ * the rule has no expiration. Used by both the bucket-info "Lifecycle
+ * Rules" row and the lifecycle-list table cell.
+ */
+export function describeExpiration(
+  rule: BucketLifecycleRule
+): string | undefined {
+  if (!rule.expiration) return undefined;
+  if (rule.expiration.days !== undefined) return `${rule.expiration.days}d`;
+  if (rule.expiration.date !== undefined) return rule.expiration.date;
+  return undefined;
+}
+
 function formatLifecycleRule(rule: BucketLifecycleRule): string {
   const parts: string[] = [];
 
-  if (rule.storageClass) {
-    if (rule.days !== undefined) {
-      parts.push(`${rule.storageClass} after ${rule.days}d`);
-    } else if (rule.date !== undefined) {
-      parts.push(`${rule.storageClass} on ${rule.date}`);
-    } else {
-      parts.push(rule.storageClass);
-    }
-  }
+  const transition = describeTransition(rule);
+  if (transition) parts.push(transition);
 
-  if (rule.expiration) {
-    if (rule.expiration.days !== undefined) {
-      parts.push(`expire after ${rule.expiration.days}d`);
-    } else if (rule.expiration.date !== undefined) {
-      parts.push(`expire on ${rule.expiration.date}`);
-    }
+  const expiration = describeExpiration(rule);
+  if (expiration) {
+    // bucket-info shows expiration with the "expire" prefix; the table
+    // cell version drops it because the column header already says
+    // "Expiration".
+    parts.push(
+      rule.expiration?.days !== undefined
+        ? `expire after ${expiration}`
+        : `expire on ${expiration}`
+    );
   }
 
   const annotations: string[] = [];

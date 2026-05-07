@@ -4,6 +4,7 @@ import {
   getBucketInfo,
   setBucketLifecycle,
 } from '@tigrisdata/storage';
+import { describeExpiration, describeTransition } from '@utils/bucket-info.js';
 import { failWithError } from '@utils/exit.js';
 import { type MessageContext } from '@utils/messages.js';
 import { getOption } from '@utils/options.js';
@@ -113,6 +114,10 @@ export function validateRuleFieldCombinations(
     return '--expire-date must be a valid ISO-8601 date (e.g. 2026-06-01)';
   }
 
+  if (input.prefix !== undefined && input.prefix === '') {
+    return '--prefix cannot be empty';
+  }
+
   return undefined;
 }
 
@@ -206,16 +211,9 @@ export async function submitRules(
 }
 
 export function formatTransitionCell(rule: BucketLifecycleRule): string {
-  if (!rule.storageClass) return '-';
-  if (rule.days !== undefined)
-    return `${rule.storageClass} after ${rule.days}d`;
-  if (rule.date !== undefined) return `${rule.storageClass} on ${rule.date}`;
-  return rule.storageClass;
+  return describeTransition(rule) ?? '-';
 }
 
 export function formatExpirationCell(rule: BucketLifecycleRule): string {
-  if (!rule.expiration) return '-';
-  if (rule.expiration.days !== undefined) return `${rule.expiration.days}d`;
-  if (rule.expiration.date !== undefined) return rule.expiration.date;
-  return '-';
+  return describeExpiration(rule) ?? '-';
 }
