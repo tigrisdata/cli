@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   expirationFromInput,
   transitionDeltaFromInput,
+  validateRuleFieldCombinations,
 } from '../../../../src/lib/buckets/lifecycle/shared.js';
 
 describe('transitionDeltaFromInput', () => {
@@ -27,6 +28,34 @@ describe('transitionDeltaFromInput', () => {
   it('returns an empty delta when no timing or class is set', () => {
     const delta = transitionDeltaFromInput({});
     expect(delta).toEqual({});
+  });
+});
+
+describe('validateRuleFieldCombinations', () => {
+  it('rejects --days without --storage-class by default (create semantics)', () => {
+    expect(validateRuleFieldCombinations({ days: '30' })).toContain(
+      '--storage-class is required'
+    );
+  });
+
+  it('allows --days without --storage-class when called with requireStorageClassForTiming: false (edit semantics)', () => {
+    // Regression: validator used to block edit cases where the existing
+    // rule already had a storage class.
+    expect(
+      validateRuleFieldCombinations(
+        { days: '30' },
+        { requireStorageClassForTiming: false }
+      )
+    ).toBeUndefined();
+  });
+
+  it('still rejects mutually exclusive --days and --date in edit mode', () => {
+    expect(
+      validateRuleFieldCombinations(
+        { days: '30', date: '2026-06-01' },
+        { requireStorageClassForTiming: false }
+      )
+    ).toContain('Cannot specify both --days and --date');
   });
 });
 

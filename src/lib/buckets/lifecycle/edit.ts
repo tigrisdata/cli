@@ -32,7 +32,12 @@ export default async function edit(options: Record<string, unknown>) {
 
   const input = readRuleInput(options);
 
-  const validationError = validateRuleFieldCombinations(input);
+  // Edit defers the "transition needs a storage class" check until
+  // after we fetch the target — the existing rule may already supply
+  // one, in which case `--days 60` alone is valid.
+  const validationError = validateRuleFieldCombinations(input, {
+    requireStorageClassForTiming: false,
+  });
   if (validationError) {
     failWithError(context, validationError);
   }
@@ -65,6 +70,43 @@ export default async function edit(options: Record<string, unknown>) {
       context,
       `No lifecycle rule with id "${id}" found. Run \`tigris buckets lifecycle list ${name}\` to see ids.`
     );
+  }
+
+  // If the user touched any transition field, the merged rule must
+  // still have both a storage class and timing. Otherwise the API
+  // accepts the rule but silently drops the transition.
+  const userTouchedTransition =
+    input.storageClass !== undefined ||
+    input.days !== undefined ||
+    input.date !== undefined;
+
+  if (userTouchedTransition) {
+    const finalStorageClass = transition.storageClass ?? target.storageClass;
+    const finalDays =
+      input.days !== undefined
+        ? Number(input.days)
+        : input.date !== undefined
+          ? undefined
+          : target.days;
+    const finalDate =
+      input.date !== undefined
+        ? input.date
+        : input.days !== undefined
+          ? undefined
+          : target.date;
+
+    if (!finalStorageClass) {
+      failWithError(
+        context,
+        '--storage-class is required (this rule has no existing transition target)'
+      );
+    }
+    if (finalDays === undefined && finalDate === undefined) {
+      failWithError(
+        context,
+        '--days or --date is required (this rule has no existing transition timing)'
+      );
+    }
   }
 
   const updated: BucketLifecycleRule = {

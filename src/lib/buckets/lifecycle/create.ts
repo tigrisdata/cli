@@ -43,6 +43,21 @@ export default async function create(options: Record<string, unknown>) {
     );
   }
 
+  // A transition requires both a target class and timing. The shared
+  // validator covers timing-without-class; this check covers the
+  // inverse (--storage-class without --days/--date) which only applies
+  // to create.
+  if (
+    transition.storageClass &&
+    input.days === undefined &&
+    input.date === undefined
+  ) {
+    failWithError(
+      context,
+      '--storage-class requires --days or --date for a new transition rule'
+    );
+  }
+
   const enabled = enabledFromInput(input);
 
   const config = await getStorageConfigWithOrg();

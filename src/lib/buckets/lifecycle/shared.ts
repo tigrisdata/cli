@@ -49,18 +49,28 @@ export function readRuleInput(options: Record<string, unknown>): RuleInput {
 }
 
 /**
- * Validates transition/expiration field combinations. Returns an error
- * message if invalid. Does NOT enforce "at least one of" — callers do
- * that based on whether they're creating or editing.
+ * Validates field formats and intra-input conflicts (date vs days,
+ * enable vs disable, ISO format, positive numbers). Does NOT enforce
+ * "at least one of transition/expiration" or "transition needs both
+ * class and timing" — those are structural rules the caller decides
+ * based on create vs edit semantics.
+ *
+ * `requireStorageClassForTiming` defaults to `true` (create semantics).
+ * Edit passes `false` because the existing rule may already supply a
+ * storage class; the merged-rule check happens post-fetch in edit.ts.
  */
 export function validateRuleFieldCombinations(
-  input: RuleInput
+  input: RuleInput,
+  {
+    requireStorageClassForTiming = true,
+  }: { requireStorageClassForTiming?: boolean } = {}
 ): string | undefined {
   if (input.enable && input.disable) {
     return 'Cannot use both --enable and --disable';
   }
 
   if (
+    requireStorageClassForTiming &&
     (input.days !== undefined || input.date !== undefined) &&
     !input.storageClass
   ) {
