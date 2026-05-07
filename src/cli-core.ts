@@ -228,7 +228,7 @@ export function showCommandHelp(
   hasImplementation: ImplementationChecker
 ) {
   const fullPath = pathParts.join(' ');
-  console.log(`\n${specs.name} ${fullPath} - ${command.description}\n`);
+  console.log(`\n${specs.name} ${fullPath} - ${command.description ?? ''}\n`);
 
   if (command.commands && command.commands.length > 0) {
     const availableCmds = command.commands.filter(
@@ -250,7 +250,7 @@ export function showCommandHelp(
           cmdPart += ` (${aliases.join(', ')})`;
         }
         const paddedCmdPart = cmdPart.padEnd(24);
-        console.log(`${paddedCmdPart}${cmd.description}`);
+        console.log(`${paddedCmdPart}${cmd.description ?? ''}`);
       });
       console.log();
     }
@@ -308,7 +308,7 @@ export function showMainHelp(
       commandPart += ` (${aliases.join(', ')})`;
     }
     const paddedCommandPart = commandPart.padEnd(24);
-    console.log(`${paddedCommandPart}${command.description}`);
+    console.log(`${paddedCommandPart}${command.description ?? ''}`);
   });
   console.log(
     `\nUse "${specs.name} <command> help" for more information about a command.`
