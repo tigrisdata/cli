@@ -107,35 +107,48 @@ export function validateRuleFieldCombinations(
 }
 
 /**
- * Build a transition delta to merge into a rule.
- * Only includes fields the user explicitly set.
+ * Build a transition delta to merge into a rule. `days` and `date` are
+ * mutually exclusive in the API — when the user sets one, this delta
+ * explicitly nulls the other so spreading over an existing rule
+ * overrides a previously-set value instead of leaving both populated.
  */
 export function transitionDeltaFromInput(input: RuleInput): {
   storageClass?: TransitionClass;
   days?: number;
-  date?: string;
+  date?: string | undefined;
 } {
-  return {
-    ...(input.storageClass
-      ? { storageClass: input.storageClass as TransitionClass }
-      : {}),
-    ...(input.days !== undefined ? { days: Number(input.days) } : {}),
-    ...(input.date !== undefined ? { date: input.date } : {}),
-  };
+  const delta: {
+    storageClass?: TransitionClass;
+    days?: number;
+    date?: string | undefined;
+  } = {};
+  if (input.storageClass) {
+    delta.storageClass = input.storageClass as TransitionClass;
+  }
+  if (input.days !== undefined) {
+    delta.days = Number(input.days);
+    delta.date = undefined;
+  } else if (input.date !== undefined) {
+    delta.date = input.date;
+    delta.days = undefined;
+  }
+  return delta;
 }
 
 /**
  * Build an expiration object from input, or undefined if neither
- * --expire-days nor --expire-date was provided.
+ * --expire-days nor --expire-date was provided. `days` and `date` are
+ * mutually exclusive — the unset one is emitted as `undefined` so
+ * spreading over an existing expiration clears the conflicting field.
  */
 export function expirationFromInput(
   input: RuleInput
-): { days?: number; date?: string } | undefined {
+): { days?: number; date?: string | undefined } | undefined {
   if (input.expireDays !== undefined) {
-    return { days: Number(input.expireDays) };
+    return { days: Number(input.expireDays), date: undefined };
   }
   if (input.expireDate !== undefined) {
-    return { date: input.expireDate };
+    return { date: input.expireDate, days: undefined };
   }
   return undefined;
 }
