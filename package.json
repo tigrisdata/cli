@@ -76,6 +76,7 @@
       [
         "@semantic-release/commit-analyzer",
         {
+          "preset": "conventionalcommits",
           "releaseRules": [
             {
               "type": "refactor",
@@ -84,7 +85,12 @@
           ]
         }
       ],
-      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/release-notes-generator",
+        {
+          "preset": "conventionalcommits"
+        }
+      ],
       "@semantic-release/github",
       "@semantic-release/npm"
     ]
@@ -105,6 +111,7 @@
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.19.11",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
     "dotenv": "^17.4.2",
     "eslint": "^10.2.1",
     "eslint-plugin-simple-import-sort": "^13.0.0",
