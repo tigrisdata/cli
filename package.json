@@ -79,6 +79,10 @@
           "preset": "conventionalcommits",
           "releaseRules": [
             {
+              "breaking": true,
+              "release": "major"
+            },
+            {
               "type": "refactor",
               "release": "patch"
             }
