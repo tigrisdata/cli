@@ -80,7 +80,12 @@ export default async function deleteObject(options: Record<string, unknown>) {
       // don't issue thousands of requests just to walk past every
       // `a*` key when the user asked for `a`.
       let pastTarget = false;
-      do {
+      // Drive loop continuation off the explicit `hasMore` flag,
+      // not marker truthiness. A destructive bulk-delete must never
+      // silently stop because the server reported more pages but
+      // omitted a continuation token — bail loudly instead so the
+      // user doesn't end up with half-deleted history.
+      for (;;) {
         const { data, error } = await listVersions({
           prefix: key,
           ...(keyMarker ? { keyMarker } : {}),
@@ -110,10 +115,16 @@ export default async function deleteObject(options: Record<string, unknown>) {
             pastTarget = true;
           }
         }
-        if (pastTarget) break;
-        keyMarker = data.hasMore ? data.nextKeyMarker : undefined;
-        versionIdMarker = data.hasMore ? data.nextVersionIdMarker : undefined;
-      } while (keyMarker);
+        if (pastTarget || !data.hasMore) break;
+        if (!data.nextKeyMarker) {
+          failWithError(
+            context,
+            `listVersions reported more pages but no nextKeyMarker for key '${key}'`
+          );
+        }
+        keyMarker = data.nextKeyMarker;
+        versionIdMarker = data.nextVersionIdMarker;
+      }
 
       if (matched === 0) {
         failWithError(
