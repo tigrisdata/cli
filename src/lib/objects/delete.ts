@@ -74,6 +74,12 @@ export default async function deleteObject(options: Record<string, unknown>) {
       let versionIdMarker: string | undefined;
       // listVersions is paginated; walk every page so we don't
       // leave older history behind on heavily-versioned keys.
+      // ListObjectVersions returns entries in (key asc, version-id
+      // desc) order. Once we see a key that sorts after the target,
+      // no later page can contain another match — bail out so we
+      // don't issue thousands of requests just to walk past every
+      // `a*` key when the user asked for `a`.
+      let pastTarget = false;
       do {
         const { data, error } = await listVersions({
           prefix: key,
@@ -89,15 +95,22 @@ export default async function deleteObject(options: Record<string, unknown>) {
         // deletion so we don't nuke a sibling like `foo.txt.bak`
         // when the user asked for `foo.txt`.
         for (const v of data.versions) {
-          if (v.name !== key) continue;
-          targets.push({ key, versionId: v.versionId });
-          matched++;
+          if (v.name === key) {
+            targets.push({ key, versionId: v.versionId });
+            matched++;
+          } else if (v.name > key) {
+            pastTarget = true;
+          }
         }
         for (const m of data.deleteMarkers) {
-          if (m.name !== key) continue;
-          targets.push({ key, versionId: m.versionId });
-          matched++;
+          if (m.name === key) {
+            targets.push({ key, versionId: m.versionId });
+            matched++;
+          } else if (m.name > key) {
+            pastTarget = true;
+          }
         }
+        if (pastTarget) break;
         keyMarker = data.hasMore ? data.nextKeyMarker : undefined;
         versionIdMarker = data.hasMore ? data.nextVersionIdMarker : undefined;
       } while (keyMarker);

@@ -71,11 +71,6 @@ export default async function listObjectVersions(
     modified: m.lastModified,
   }));
 
-  if (versionRows.length === 0 && deleteMarkerRows.length === 0) {
-    printEmpty(context);
-    return;
-  }
-
   const versionColumns: TableColumn[] = [
     { key: 'key', header: 'Key' },
     { key: 'versionId', header: 'Version ID' },
@@ -91,6 +86,10 @@ export default async function listObjectVersions(
     { key: 'modified', header: 'Modified' },
   ];
 
+  // JSON / XML always emit a valid response object — even when both
+  // arrays are empty — so downstream `jq` / parser consumers don't
+  // have to special-case the no-results path. The human-readable
+  // "empty" message only fires in table mode.
   if (format === 'json') {
     // Mirror the S3 ListObjectVersions response shape so downstream
     // `jq` users get the same ergonomics as `aws s3api`.
@@ -120,6 +119,10 @@ export default async function listObjectVersions(
     lines.push('</listVersions>');
     console.log(lines.join('\n'));
   } else {
+    if (versionRows.length === 0 && deleteMarkerRows.length === 0) {
+      printEmpty(context);
+      return;
+    }
     if (versionRows.length > 0) {
       console.log('\nVersions');
       console.log(formatTable(versionRows, versionColumns));
