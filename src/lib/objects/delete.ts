@@ -164,6 +164,10 @@ export default async function deleteObject(options: Record<string, unknown>) {
     const jsonOutput: Record<string, unknown> = {
       action: 'deleted',
       bucket,
+      // `keys` is kept as a flat string[] for backward compatibility
+      // with consumers that predate versioning support. `deleted`
+      // carries the richer (key, versionId?) shape for new callers.
+      keys: deleted.map((d) => d.key),
       deleted,
       errors,
     };
