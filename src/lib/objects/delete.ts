@@ -69,22 +69,40 @@ export default async function deleteObject(options: Record<string, unknown>) {
   const targets: Target[] = [];
   if (allVersions) {
     for (const key of keyList) {
-      const { data, error } = await listVersions({
-        prefix: key,
-        config: bucketConfig,
-      });
-      if (error) {
-        failWithError(context, error);
-      }
-      const matchingVersions = data.versions.filter((v) => v.name === key);
-      const matchingMarkers = data.deleteMarkers.filter((m) => m.name === key);
-      for (const v of matchingVersions) {
-        targets.push({ key, versionId: v.versionId });
-      }
-      for (const m of matchingMarkers) {
-        targets.push({ key, versionId: m.versionId });
-      }
-      if (matchingVersions.length === 0 && matchingMarkers.length === 0) {
+      let matched = 0;
+      let keyMarker: string | undefined;
+      let versionIdMarker: string | undefined;
+      // listVersions is paginated; walk every page so we don't
+      // leave older history behind on heavily-versioned keys.
+      do {
+        const { data, error } = await listVersions({
+          prefix: key,
+          ...(keyMarker ? { keyMarker } : {}),
+          ...(versionIdMarker ? { versionIdMarker } : {}),
+          config: bucketConfig,
+        });
+        if (error) {
+          failWithError(context, error);
+        }
+        // `prefix` is a loose filter — listVersions returns any key
+        // that starts with `key`. Exact-match before queueing for
+        // deletion so we don't nuke a sibling like `foo.txt.bak`
+        // when the user asked for `foo.txt`.
+        for (const v of data.versions) {
+          if (v.name !== key) continue;
+          targets.push({ key, versionId: v.versionId });
+          matched++;
+        }
+        for (const m of data.deleteMarkers) {
+          if (m.name !== key) continue;
+          targets.push({ key, versionId: m.versionId });
+          matched++;
+        }
+        keyMarker = data.hasMore ? data.nextKeyMarker : undefined;
+        versionIdMarker = data.hasMore ? data.nextVersionIdMarker : undefined;
+      } while (keyMarker);
+
+      if (matched === 0) {
         failWithError(
           context,
           `No versions or delete markers found for key '${key}'`

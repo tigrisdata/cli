@@ -8,13 +8,7 @@ import {
   formatXml,
   type TableColumn,
 } from '@utils/format.js';
-import {
-  msg,
-  printEmpty,
-  printPaginationHint,
-  printStart,
-  printSuccess,
-} from '@utils/messages.js';
+import { msg, printEmpty, printStart, printSuccess } from '@utils/messages.js';
 import { getFormat, getOption, getPaginationOptions } from '@utils/options.js';
 import { parseAnyPath } from '@utils/path.js';
 
@@ -134,7 +128,15 @@ export default async function listObjectVersions(
       console.log('Delete Markers');
       console.log(formatTable(deleteMarkerRows, deleteMarkerColumns));
     }
-    printPaginationHint(data.nextKeyMarker);
+    if (data.hasMore && data.nextKeyMarker) {
+      // `list-versions` paginates on a (keyMarker, versionIdMarker)
+      // pair, not the single page-token the generic helper assumes.
+      let hint = `\nNext page: --key-marker "${data.nextKeyMarker}"`;
+      if (data.nextVersionIdMarker) {
+        hint += ` --version-id-marker "${data.nextVersionIdMarker}"`;
+      }
+      console.error(hint);
+    }
   }
 
   printSuccess(context, {
