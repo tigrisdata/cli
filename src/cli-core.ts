@@ -140,6 +140,12 @@ export function formatArgumentHelp(arg: Argument): string {
     description += ' [required]';
   }
 
+  if (arg.deprecated) {
+    description += arg.replaced_by
+      ? ` [deprecated: use ${arg.replaced_by}]`
+      : ' [deprecated]';
+  }
+
   if (arg['required-when']) {
     description += ` [required when: ${arg['required-when']}]`;
   }

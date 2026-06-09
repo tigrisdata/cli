@@ -42,7 +42,7 @@ export default async function list(options: Record<string, unknown>) {
       failWithError(context, infoError);
     }
 
-    if (!data.forks.length) {
+    if (!data.forks || data.forks.length === 0) {
       printEmpty(context);
       return;
     }
