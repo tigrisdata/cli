@@ -97,6 +97,14 @@ export default async function set(options: Record<string, unknown>) {
     updateOptions.enableDeleteProtection = parseBoolean(enableDeleteProtection);
   }
 
+  if (
+    softDelete !== undefined &&
+    softDelete !== 'enable' &&
+    softDelete !== 'disable'
+  ) {
+    failWithError(context, '--soft-delete must be "enable" or "disable"');
+  }
+
   if (retentionDays !== undefined && softDelete !== 'enable') {
     failWithError(
       context,
@@ -104,25 +112,20 @@ export default async function set(options: Record<string, unknown>) {
     );
   }
 
-  if (softDelete !== undefined) {
-    if (softDelete !== 'enable' && softDelete !== 'disable') {
-      failWithError(context, '--soft-delete must be "enable" or "disable"');
+  if (softDelete === 'enable') {
+    if (retentionDays === undefined) {
+      failWithError(
+        context,
+        '--retention-days is required when enabling soft delete'
+      );
     }
-    if (softDelete === 'enable') {
-      if (retentionDays === undefined) {
-        failWithError(
-          context,
-          '--retention-days is required when enabling soft delete'
-        );
-      }
-      const days = Number(retentionDays);
-      if (!Number.isInteger(days) || days <= 0) {
-        failWithError(context, '--retention-days must be a positive integer');
-      }
-      updateOptions.softDelete = { enabled: true, retentionDays: days };
-    } else {
-      updateOptions.softDelete = { enabled: false };
+    const days = Number(retentionDays);
+    if (!Number.isInteger(days) || days <= 0) {
+      failWithError(context, '--retention-days must be a positive integer');
     }
+    updateOptions.softDelete = { enabled: true, retentionDays: days };
+  } else if (softDelete === 'disable') {
+    updateOptions.softDelete = { enabled: false };
   }
 
   if (enableAdditionalHeaders !== undefined) {
