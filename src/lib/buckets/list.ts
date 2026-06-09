@@ -28,6 +28,12 @@ export default async function list(options: Record<string, unknown>) {
     );
   }
 
+  if (forksOf && deleted) {
+    console.warn(
+      '⚠ --deleted is ignored when --forks-of is used; use --deleted on its own to list soft-deleted buckets'
+    );
+  }
+
   if (forksOf) {
     // Filter for forks of the named source bucket
     const { data, error: infoError } = await listForks(forksOf, { config });

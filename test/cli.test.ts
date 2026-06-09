@@ -1523,6 +1523,16 @@ describe.skipIf(skipTests)('CLI Integration Tests', () => {
         expect(result.exitCode).toBe(1);
       });
 
+      it('should error on --retention-days without --soft-delete enable', () => {
+        const result = runCli(
+          `buckets set ${setBucket} --access public --retention-days 30`
+        );
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain(
+          '--retention-days can only be used with --soft-delete enable'
+        );
+      });
+
       it('should set --locations usa', () => {
         const result = runCli(`buckets set ${setBucket} --locations usa`);
         expect(result.exitCode).toBe(0);

@@ -97,6 +97,13 @@ export default async function set(options: Record<string, unknown>) {
     updateOptions.enableDeleteProtection = parseBoolean(enableDeleteProtection);
   }
 
+  if (retentionDays !== undefined && softDelete !== 'enable') {
+    failWithError(
+      context,
+      '--retention-days can only be used with --soft-delete enable'
+    );
+  }
+
   if (softDelete !== undefined) {
     if (softDelete !== 'enable' && softDelete !== 'disable') {
       failWithError(context, '--soft-delete must be "enable" or "disable"');
