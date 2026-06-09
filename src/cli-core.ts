@@ -373,7 +373,14 @@ export function addArgumentsToCommand(
           new Option(optionString, arg.description ?? '').hideHelp()
         );
       } else {
-        cmd.option(optionString, arg.description ?? '', arg.default);
+        let description = arg.description ?? '';
+        if (arg.deprecated) {
+          const hint = arg.replaced_by
+            ? ` Use ${arg.replaced_by} instead.`
+            : '';
+          description = `(deprecated) ${description}${hint}`;
+        }
+        cmd.option(optionString, description, arg.default);
       }
     }
   });
