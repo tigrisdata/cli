@@ -108,6 +108,7 @@
     "enquirer": "^2.4.1",
     "jose": "^6.2.3",
     "open": "^11.0.0",
+    "unique-names-generator": "^4.7.1",
     "yaml": "^2.8.3"
   },
   "devDependencies": {

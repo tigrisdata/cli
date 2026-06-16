@@ -47,6 +47,7 @@ Run `tigris help` to see all available commands, or `tigris <command> help` for 
 | `tigris objects` (o) | Low-level object operations for listing, downloading, uploading, and deleting individual objects in a bucket |
 | `tigris access-keys` (keys) | Create, list, inspect, delete, and assign roles to access keys. Access keys are credentials used for programmatic API access |
 | `tigris iam` | Identity and Access Management - manage policies, users, and permissions |
+| `tigris project` | Project scaffolding helpers for getting started with Tigris |
 
 ---
 
@@ -1446,6 +1447,38 @@ tigris iam users remove [resource] [flags]
 tigris iam users remove
 tigris iam users remove user@example.com --yes
 tigris iam users remove user@example.com,user@example.net --yes
+```
+
+### `tigris project`
+
+Project scaffolding helpers for getting started with Tigris
+
+| Command | Description |
+|---------|-------------|
+| `tigris project setup` | Set up a Tigris project — create a bucket, an Editor-scoped access key, and write a .env for the @tigrisdata/storage package |
+
+#### `tigris project setup`
+
+Set up a Tigris project — create a bucket, an Editor-scoped access key, and write a .env for the @tigrisdata/storage package
+
+```
+tigris project setup [flags]
+```
+
+| Flag | Description |
+|------|-------------|
+| `-b, --bucket` | Name of the bucket to create (default: a randomly generated name) |
+| `-a, --access` | Access level for the bucket (default: private) |
+| `-l, --locations` | Location(s) for the bucket, comma-separated (default: global) |
+| `--env-file` | Path to the .env file to write (default: .env) |
+| `--force` | Overwrite the .env file if it already exists |
+| `--skip-agent-setup` | Skip installing Tigris agent skills |
+| `--skip-install` | Skip installing the @tigrisdata/storage and @tigrisdata/agent-kit npm packages |
+
+**Examples:**
+```bash
+tigris project setup
+tigris project setup --bucket my-app --access public
 ```
 
 ## License

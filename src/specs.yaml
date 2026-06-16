@@ -2064,3 +2064,50 @@ commands:
               - name: force
                 type: flag
                 description: Skip confirmation prompts (alias for --yes)
+
+  #########################
+  # Project
+  #########################
+  - name: project
+    description: Project scaffolding helpers for getting started with Tigris
+    examples:
+      - "tigris project setup"
+    commands:
+      - name: setup
+        description: Set up a Tigris project — create a bucket, an Editor-scoped access key, and write a .env for the @tigrisdata/storage package
+        examples:
+          - "tigris project setup"
+          - "tigris project setup --bucket my-app --access public"
+        messages:
+          onStart: 'Setting up Tigris project...'
+          onSuccess: 'Project ready'
+          onFailure: 'Failed to set up project'
+          nextActions:
+            - command: 'claude'
+              description: 'Start a new agent session to adapt your app to use Tigris'
+        arguments:
+          - name: bucket
+            description: 'Name of the bucket to create (default: a randomly generated name)'
+            alias: b
+          - name: access
+            description: Access level for the bucket
+            alias: a
+            options: *access_options
+            default: private
+          - name: locations
+            description: Location(s) for the bucket, comma-separated
+            alias: l
+            options: *location_options
+            default: 'global'
+          - name: env-file
+            description: Path to the .env file to write
+            default: '.env'
+          - name: force
+            type: flag
+            description: Overwrite the .env file if it already exists
+          - name: skip-agent-setup
+            type: flag
+            description: Skip installing Tigris agent skills
+          - name: skip-install
+            type: flag
+            description: Skip installing the @tigrisdata/storage and @tigrisdata/agent-kit npm packages
