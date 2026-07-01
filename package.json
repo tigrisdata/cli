@@ -101,6 +101,7 @@
   },
   "dependencies": {
     "@aws-sdk/credential-providers": "^3.1038.0",
+    "@clack/prompts": "^0.11.0",
     "@smithy/shared-ini-file-loader": "^4.4.9",
     "@tigrisdata/iam": "^2.2.0",
     "@tigrisdata/storage": "^3.16.0",
