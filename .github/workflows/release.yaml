@@ -41,6 +41,26 @@ jobs:
       - run: npm run test
       - run: npm run publint
 
+      # A push to main with no pending changesets means the Version Packages
+      # PR was merged and changesets is about to publish — gate that publish on
+      # the integration suite. Feature-merge pushes still have changesets
+      # pending, so they skip this heavier step (it also runs in ci.yaml).
+      - name: Detect pending changesets
+        id: pending
+        run: |
+          if ls .changeset/*.md 2>/dev/null | grep -qvx '.changeset/README.md'; then
+            echo 'changesets=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changesets=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Integration tests (pre-publish gate)
+        if: steps.pending.outputs.changesets == 'false'
+        run: npm run test:integration
+        env:
+          TIGRIS_STORAGE_ACCESS_KEY_ID: ${{ secrets.TIGRIS_STORAGE_ACCESS_KEY_ID }}
+          TIGRIS_STORAGE_SECRET_ACCESS_KEY: ${{ secrets.TIGRIS_STORAGE_SECRET_ACCESS_KEY }}
+
       - name: Create Release PR or publish to npm
         id: changesets
         uses: changesets/action@v1
