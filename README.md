@@ -1,3 +1,15 @@
+> [!IMPORTANT]
+> **This repository has moved to the Tigris monorepo.**
+> `@tigrisdata/cli` now lives at **[tigrisdata/storage](https://github.com/tigrisdata/storage)** under
+> [`packages/cli`](https://github.com/tigrisdata/storage/tree/main/packages/cli).
+> All development, issues, and releases continue there.
+>
+> This repository is **archived and read-only**. The npm package
+> [`@tigrisdata/cli`](https://www.npmjs.com/package/@tigrisdata/cli) is unaffected
+> and continues to publish from the monorepo.
+
+---
+
 # @tigrisdata/cli
 
 Command line interface for Tigris object storage.
