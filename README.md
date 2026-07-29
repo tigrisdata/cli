@@ -3,15 +3,11 @@
 Command line interface for Tigris object storage.
 
 > [!NOTE]
-> **This repository is a pointer, not the source.**
-> `@tigrisdata/cli` is developed in the Tigris monorepo, included here as a git
-> submodule at [`storage/`](storage). The CLI package lives at
-> [`storage/packages/cli`](storage/packages/cli).
->
-> **All development, issues, releases, and version bumps happen in
-> [tigrisdata/storage](https://github.com/tigrisdata/storage).** This repository
-> only tracks a pinned storage commit and is advanced append-only when a new CLI
-> version is released.
+> **This repository has no source code of its own.**
+> `@tigrisdata/cli` is developed in the Tigris monorepo,
+> [tigrisdata/storage](https://github.com/tigrisdata/storage), under
+> [`packages/cli`](https://github.com/tigrisdata/storage/tree/main/packages/cli).
+> It's embedded here as a git submodule at [`storage/`](storage).
 
 ## Install
 
@@ -23,9 +19,6 @@ brew install tigrisdata/tap/tigris
 
 ## Build from source
 
-The CLI is built from within the monorepo submodule, where its workspace
-dependencies resolve natively:
-
 ```bash
 git clone --recurse-submodules https://github.com/tigrisdata/cli.git
 cd cli/storage
@@ -33,7 +26,7 @@ pnpm install
 pnpm --filter @tigrisdata/cli build
 ```
 
-Already cloned without `--recurse-submodules`? Fetch the submodule with:
+Cloned without `--recurse-submodules`? `storage/` will be empty. Fetch it with:
 
 ```bash
 git submodule update --init
@@ -41,9 +34,10 @@ git submodule update --init
 
 ## Contributing
 
-Open issues and pull requests in
-[tigrisdata/storage](https://github.com/tigrisdata/storage). Changes are not made
-in this repository.
+Pull requests opened here are closed automatically. Open issues and pull
+requests in [tigrisdata/storage](https://github.com/tigrisdata/storage) instead.
+
+**Agents:** see [AGENTS.md](AGENTS.md) before making any change in this repository.
 
 ## License
 
