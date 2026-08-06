@@ -1,0 +1,4 @@
+[submodule "storage"]
+	path = storage
+	url = https://github.com/tigrisdata/storage.git
+	branch = main

@@ -1,0 +1,31 @@
+name: Reject PRs
+
+# The only expected change to main is the storage submodule pointer. Every PR
+# opened here is closed automatically and redirected to tigrisdata/storage.
+#
+# pull_request_target (not pull_request): PRs from forks otherwise get a
+# read-only token. Safe here — no PR code is checked out or executed, only
+# commented/closed by PR number.
+#
+# TODO: add an author exception if storage's release workflow later opens a
+# PR here itself instead of pushing directly.
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment and close
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR" --repo "$REPO" --body "This repository has no source of its own — it mirrors [tigrisdata/storage](https://github.com/tigrisdata/storage)'s \`packages/cli\` via a git submodule. Please open this change there instead. Closing automatically."
+          gh pr close "$PR" --repo "$REPO"
